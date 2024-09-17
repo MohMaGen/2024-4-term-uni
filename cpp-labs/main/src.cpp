@@ -5,6 +5,7 @@
 #include <vector>
 #include <lab1.hpp>
 #include <lab2.hpp>
+#include <lab3.hpp>
 
 const char HELP_MESSAGE[] =
     "\t\t _       _                                                \n"
@@ -51,6 +52,8 @@ auto main(void) -> int {
             runFirstLab();
         } else if (command == "lab2") {
             lab2::runLab2();
+        } else if (command == "lab3") {
+            lab3::runLab3();
         } else if (command == "help") {
             std::cout << HELP_MESSAGE << std::endl;
         } else if (command == "quit") {
