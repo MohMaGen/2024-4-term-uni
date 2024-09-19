@@ -18,6 +18,7 @@ const char HELP_MESSAGE[] =
     "\thelp for this message.\n"
     "\tlab1 <from> <to> -- for lab1 process.\n"
     "\tlab2 <n>         -- for lab2 process.\n"
+    "\tlab3 <n>         -- for lab3 process.\n"
     "\tquit -- to quit from lab runner.";
 
 void runFirstLab(void) {

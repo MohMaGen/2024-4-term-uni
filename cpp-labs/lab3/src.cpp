@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -25,6 +26,7 @@ namespace lab3 {
         December,
     };
 
+
     /*
      * Дата.
      */
@@ -32,7 +34,21 @@ namespace lab3 {
         unsigned short year;
         Month month;
         unsigned char day;
+
     };
+
+    int cmpDate(Date fst, Date snd) {
+        if (fst.year > snd.year) return 1;
+        if (snd.year > fst.year) return -1;
+
+        if (fst.month > snd.month) return 1;
+        if (snd.month > fst.month) return -1;
+
+        if (fst.day > snd.day) return 1;
+        if (snd.day > fst.day) return -1;
+
+        return 0;
+    }
 
     /*
      * Полное имя.
@@ -88,6 +104,8 @@ namespace lab3 {
         "Reshetnikov",
         "Grachev"
     };
+    const unsigned int AGE_GENERATION_RANGE = 60;
+    const unsigned int AGE_GENERATION_START = 1950;
 
     /*
      * Заполняет массив сотрудников случайно сгенерированными данными.
@@ -112,6 +130,7 @@ namespace lab3 {
                 strcpy(full_name.given_name,  MALE_NAMES   [rand() % MALE_NAMES_LEN]);
                 strcpy(full_name.family_name, FAMILY_NAMES [rand() % FAMILY_NAMES_LEN]);
                 strcpy(full_name.third_name,  MALE_NAMES   [rand() % MALE_NAMES_LEN]);
+
                 strcpy(full_name.third_name + strlen(full_name.third_name), "ovich");
 
                 gender = Gender::Male;
@@ -127,7 +146,7 @@ namespace lab3 {
             }
 
             birth_date.day   = rand() % 26 + 1;
-            birth_date.year  = rand() % 26 + 1975;
+            birth_date.year  = rand() % AGE_GENERATION_RANGE + AGE_GENERATION_START;
             birth_date.month = Month( rand() % 12 );
 
             employees[i] = Employee { full_name, gender, birth_date };
@@ -172,6 +191,32 @@ namespace lab3 {
 
 
     /*
+     * Выводиьт Сотрудников в краткой форме с индексами.
+     *
+     * @param employee  --- сотрудник.
+     * @param i         --- номер сотрудника.
+     */
+    void printEmployeeShort(Employee employee, int i) {
+        printf("\t%4d: %s %s %s %d.%d.%d\n", i,
+                employee.full_name.family_name, employee.full_name.given_name, employee.full_name.third_name,
+                (int)employee.birth_date.day, (int)employee.birth_date.month, (int)employee.birth_date.year
+              );
+    }
+
+    /*
+     * Выводит массив сотрудника в краткой форме с индексами.
+     *
+     * @param employees --- указатель на массив.
+     * @param len       --- длина массива.
+     */
+    void printEmployeesShort(Employee* employees, size_t len) {
+        for (size_t i = 0; i < len; i++) {
+            printEmployeeShort(employees[i], i);
+        }
+    }
+
+
+    /*
      * Проверяет начинается ли строка с префикса.
      *
      * Строка и префикс должны юыть валидными C-like строками.
@@ -200,7 +245,7 @@ namespace lab3 {
                     << employees[i].full_name.family_name + strlen(query) << " "
                     << employees[i].full_name.given_name << " "
                     << employees[i].full_name.third_name << "\x1b[0m\n";
-                printEmployee(employees[i]);
+                printEmployeeShort(employees[i], i);
                 std::cout << "\n";
 
             } else if ( strStartWith(employees[i].full_name.given_name, query) ) {
@@ -209,7 +254,7 @@ namespace lab3 {
                     << "\x1b[1;34m" << query << "\x1b[0;33m"
                     << employees[i].full_name.given_name  + strlen(query)<< " "
                     << employees[i].full_name.third_name << "\x1b[0m\n";
-                printEmployee(employees[i]);
+                printEmployeeShort(employees[i], i);
                 std::cout << "\n";
 
             } else if ( strStartWith(employees[i].full_name.third_name, query) ) {
@@ -218,7 +263,7 @@ namespace lab3 {
                     << employees[i].full_name.given_name << " "
                     << "\x1b[1;34m" << query << "\x1b[0;33m"
                     << employees[i].full_name.third_name  + strlen(query) << "\x1b[0m\n";
-                printEmployee(employees[i]);
+                printEmployeeShort(employees[i], i);
                 std::cout << "\n";
             }
         }
@@ -255,6 +300,117 @@ namespace lab3 {
         }
     }
 
+    inline void swapEmployee(Employee *fst, Employee *snd) {
+        Employee tmp;
+
+        tmp = *fst;
+        *fst = *snd;
+        *snd = tmp;
+    }
+
+    void employeeQuickSortByDate(Employee *employees, long from, long to) {
+        if (from >= to || from < 0) return;
+
+        Employee *pivot = employees + to;
+
+        size_t pivot_idx = from;
+        for (size_t j = from; j < to; j++) {
+            if (cmpDate(employees[j].birth_date, pivot->birth_date) < 1 ) {
+                swapEmployee(employees + pivot_idx, employees + j);
+                pivot_idx++;
+            }
+        }
+        swapEmployee(employees + pivot_idx, pivot);
+
+        employeeQuickSortByDate(employees, from, pivot_idx - 1);
+        employeeQuickSortByDate(employees, pivot_idx + 1, to);
+    }
+
+    void sortByDate(Employee *employees, size_t len) {
+        employeeQuickSortByDate(employees, 0, len-1);
+    }
+
+    /*
+     * Находит сотрудника с наименьшей датой рождения, которая больше или равна
+     * введённому значению года, в отсортированном массиве. [ O(log(N)) ]
+     *
+     * @param employees --- указатель на массив.
+     * @param len       --- длина массива.
+     * @param year      --- год, больше которого надо найти дату рождения сотрудинка.
+     * @return указатель на, соответствующего условию, сотрудника  или нулевой указатель,
+     *      если такого нет.
+     */
+    Employee* upperBoundSorted(Employee *employees, size_t len, size_t year) {
+        Employee *curr = employees + len / 2, *end = employees + len, *start = employees;
+
+        while (curr > start && curr < end && (curr->birth_date.year < year || (curr-1)->birth_date.year >= year)) {
+            if (curr->birth_date.year >= year) {
+                end = curr;
+                curr -= (curr - start) / 2 - (curr - start) % 2;
+            } else {
+                start = curr;
+                curr += (end - curr) / 2 + (end - curr) % 2;
+            }
+        }
+        return (curr == employees + len) ? nullptr : curr;
+    }
+
+    /*
+     * Выводит всех сотрудников распределяя их по полу и возрастным группам
+     *
+     * @param employees --- указатель на массив.
+     * @param len       --- длина массива.
+     */
+    void printByGender(Employee *employees, size_t len) {
+        Employee *employees_copy = new Employee[len];
+        for (size_t i = 0; i < len; i++)
+            employees_copy[i] = employees[i];
+
+        sortByDate(employees_copy, len);
+        Date min = employees_copy[0].birth_date, max = employees_copy[len-1].birth_date;
+
+        const int RANGE = 10;
+        int date_range = max.year - min.year;
+        int groups_len = date_range / RANGE + (date_range % RANGE != 0 ? 1 : 0);
+
+        Employee *from = employees_copy, *to, *curr;
+        for (size_t i = 0; i < groups_len; i++) {
+            to = upperBoundSorted(employees_copy, len, min.year + RANGE * (i+1));
+            if (to == nullptr) to = employees_copy + len;
+
+            printf("( employees from %ld to %ld ) {\n", (int)min.year + RANGE * (i), (int)min.year + RANGE * (i+1));
+            puts("  males:");
+            curr = from-1;
+            while (++curr != to) {
+                if (curr->gender == Gender::Male) printEmployeeShort(*curr, curr - employees_copy);
+            }
+
+            puts("  females:");
+            curr = from-1;
+            while (++curr != to) {
+                if (curr->gender == Gender::Female) printEmployeeShort(*curr, curr - employees_copy);
+            }
+            puts("}");
+
+            from = to;
+        }
+
+        delete[] employees_copy;
+    }
+
+    const char HELP_MSG[] =
+            " ----------- LAB 3 -----------\n"
+            "     - \x1b[1;33mhelp\x1b[0m --- print this message.\n"
+            "     - \x1b[1;33mprint\x1b[0m --- print all employees.\n"
+            "     - \x1b[1;33mfind\x1b[0m \x1b[3;34m<query>\x1b[0m --- find employee.\n"
+            "     - \x1b[1;33molder\x1b[0m \x1b[3;34m<year>\x1b[0m --- list all employees that older <date>.\n"
+            "     - \x1b[1;33myanger\x1b[0m \x1b[3;34m<year>\x1b[0m --- list all employees that yanger <date>.\n"
+            "     - \x1b[1;33msort-by-date\x1b[0m  --- sort employees array by date.\n"
+            "     - \x1b[1;33mby-gender\x1b[0m  --- list all employess by age groups and genders.\n"
+            "     - \x1b[1;33mexit\x1b[0m  --- exit from lab.\n";
+
+    const char LAB3_SHELL_INPUT[] = "\x1b[1;34mlab3\x1b[0m> ";
+
     void runLab3(void) {
         size_t n;
         std::cin >> n;
@@ -262,24 +418,17 @@ namespace lab3 {
         Employee* employees = new Employee[n];
         generateEmployees(employees, n);
 
-        char help_msg[] =
-            " ----------- LAB 3 -----------\n"
-            "     - \x1b[1;33mhelp\x1b[0m --- print this message.\n"
-            "     - \x1b[1;33mprint\x1b[0m --- print all employees.\n"
-            "     - \x1b[1;33mfind\x1b[0m \x1b[3;34m<query>\x1b[0m --- find employee.\n"
-            "     - \x1b[1;33molder\x1b[0m \x1b[3;34m<year>\x1b[0m --- list all employees that older <date>.\n"
-            "     - \x1b[1;33myanger\x1b[0m \x1b[3;34m<year>\x1b[0m --- list all employees that yanger <date>.\n";
 
         char command[256] = { '\0' }, query[256] = { '\0' };
 
-        std::cout << help_msg << std::endl;
+        std::cout << HELP_MSG << std::endl;
 
 
         while (true) {
-            std::cout << "\x1b[1;34mlab3\x1b[0m> ";
+            std::cout << LAB3_SHELL_INPUT;
             std::cin >> command;
             if (strcmp(command, "help") == 0) {
-                std::cout << help_msg << std::endl;
+                std::cout << HELP_MSG << std::endl;
 
             } else if (strcmp(command, "find") == 0) {
                 std::cin >> query;
@@ -298,9 +447,27 @@ namespace lab3 {
                 yanger(employees, n, year);
                 std::cout << std::endl;
 
-            }else if (strcmp(command, "print") == 0) {
+            } else if (strcmp(command, "sort-by-date") == 0) {
+                sortByDate(employees, n);
+                printEmployeesShort(employees, n);
+                std::cout << std::endl;
+
+            } else if (strcmp(command, "by-gender") == 0) {
+                printByGender(employees, n);
+                std::cout << std::endl;
+            } else if (strcmp(command, "print") == 0) {
                 printEmployees(employees, n);
+
+            } else if (strcmp(command, "exit") == 0) {
+                break;
             }
         }
+
+        for (size_t i = 0; i < n; i++) {
+            delete[] employees[i].full_name.third_name;
+            delete[] employees[i].full_name.given_name;
+            delete[] employees[i].full_name.family_name;
+        }
+        delete[] employees;
     }
 }
