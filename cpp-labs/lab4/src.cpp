@@ -1,10 +1,12 @@
 #include "lab4.hpp"
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <sstream>
 
@@ -24,14 +26,12 @@ namespace lab4 {
              *
              * @param name      --- имя.
              * @param age       --- возраст.
-             * @param starvness --- сытость.
-             * @param tiredness --- усталость.
              */
-            Cat(std::string name, std::uint8_t age, std::uint8_t starvness, std::uint8_t tiredness) {
+            Cat(std::string name, std::uint8_t age) {
                 name_m = name;
                 age_m = age;
-                starvness_m = starvness;
-                tiredness_m = tiredness;
+                starvness_m = 100;
+                tiredness_m = 0;
             }
 
             /*
@@ -47,18 +47,21 @@ namespace lab4 {
 
                 this->name_m = names[rand()%20];
                 this->age_m = rand() % 15 + 1;
-                this->starvness_m = rand() % 100;
+                this->starvness_m = rand() % 20 + 80;
                 this->tiredness_m = rand() % 20;
             }
 
             void starve(float zoo_intencity) {
                 static const int STARVE_PER_HOUR = 10;
-                this->starvness_m -= 10.0 * zoo_intencity * STARVE_PER_HOUR;
+                if (this->starvness_m <= zoo_intencity * STARVE_PER_HOUR)
+                    this->starvness_m = 0;
+                else
+                    this->setStarvness(this->starvness_m - zoo_intencity * STARVE_PER_HOUR);
             }
 
             void tire(float zoo_intencity) {
                 static const int TIRE_PER_HOUR = 10;
-                this->tiredness_m += 10.0 * zoo_intencity * TIRE_PER_HOUR;
+                this->setTiredness(this->tiredness_m += zoo_intencity * TIRE_PER_HOUR);
 
             }
 
@@ -70,7 +73,7 @@ namespace lab4 {
             void setAge(std::uint8_t new_age) noexcept             { this->age_m = new_age; }
             void setName(const std::string &new_name) noexcept     { this->name_m = new_name; }
             void setStarvness(std::uint8_t new_starvness) noexcept { this->starvness_m = (new_starvness > 100) ? 100 : new_starvness; }
-            void setTiredness(std::uint8_t new_tiredness) noexcept { this->tiredness_m = new_tiredness; }
+            void setTiredness(std::uint8_t new_tiredness) noexcept { this->tiredness_m = (new_tiredness > 100) ? 100 : new_tiredness; }
     };
 
     class Dog {
@@ -87,14 +90,12 @@ namespace lab4 {
              *
              * @param name      --- имя.
              * @param age       --- возраст.
-             * @param starvness --- сытость.
-             * @param tiredness --- усталость.
              */
-            Dog(std::string name, std::uint8_t age, std::uint8_t starvness, std::uint8_t tiredness) {
+            Dog(std::string name, std::uint8_t age) {
                 name_m = name;
                 age_m = age;
-                starvness_m = starvness;
-                tiredness_m = tiredness;
+                starvness_m = 100;
+                tiredness_m = 10;
             }
 
             /*
@@ -110,18 +111,21 @@ namespace lab4 {
 
                 this->name_m = names[rand()%20];
                 this->age_m = rand() % 15 + 1;
-                this->starvness_m = rand() % 100;
+                this->starvness_m = rand() % 10 + 90;
                 this->tiredness_m = rand() % 20;
             }
 
             void starve(float zoo_intencity) {
                 static const int STARVE_PER_HOUR = 30;
-                this->starvness_m -= 10.0 * zoo_intencity * STARVE_PER_HOUR;
+                if (this->starvness_m <= zoo_intencity * STARVE_PER_HOUR)
+                    this->starvness_m = 0;
+                else
+                    this->setStarvness(this->starvness_m - zoo_intencity * STARVE_PER_HOUR);
             }
 
             void tire(float zoo_intencity) {
                 static const int TIRE_PER_HOUR = 15;
-                this->tiredness_m += 10.0 * zoo_intencity * TIRE_PER_HOUR;
+                this->setTiredness(this->tiredness_m += zoo_intencity * TIRE_PER_HOUR);
 
             }
 
@@ -151,14 +155,10 @@ namespace lab4 {
              *
              * @param name      --- имя.
              * @param age       --- возраст.
-             * @param starvness --- сытость.
-             * @param tiredness --- усталость.
              */
-            Wombat(std::string name, std::uint8_t age, std::uint8_t starvness, std::uint8_t tiredness) {
+            Wombat(std::string name, std::uint8_t age) {
                 name_m = name;
                 age_m = age;
-                starvness_m = starvness;
-                tiredness_m = tiredness;
             }
 
             /*
@@ -174,18 +174,21 @@ namespace lab4 {
 
                 this->name_m = names[rand()%18];
                 this->age_m = rand() % 15 + 1;
-                this->starvness_m = rand() % 100;
+                this->starvness_m = rand() % 10 + 90;
                 this->tiredness_m = rand() % 20;
             }
 
             void starve(float zoo_intencity) {
                 static const int STARVE_PER_HOUR = 9;
-                this->starvness_m -= 10.0 * zoo_intencity * STARVE_PER_HOUR;
+                if (this->starvness_m <= zoo_intencity * STARVE_PER_HOUR)
+                    this->starvness_m = 0;
+                else
+                    this->setStarvness(this->starvness_m - zoo_intencity * STARVE_PER_HOUR);
             }
 
             void tire(float zoo_intencity) {
-                static const int TIRE_PER_HOUR = 40;
-                this->tiredness_m += 10.0 * zoo_intencity * TIRE_PER_HOUR;
+                static const int TIRE_PER_HOUR = 30;
+                this->setTiredness(this->tiredness_m += zoo_intencity * TIRE_PER_HOUR);
 
             }
 
@@ -374,6 +377,8 @@ namespace lab4 {
                 return out.str();
             }
 
+            AnimalType getType(void) { return this->type_m; }
+
         private:
             std::string statsToString(void) const {
                 AnimalStats stats = this->getStats();
@@ -386,10 +391,11 @@ namespace lab4 {
 
             AnimalType type_m;
 
+            void *animal_ptr_m;
+
             AnimalState state_m;
             std::uint8_t hours_in_state_m;
 
-            void *animal_ptr_m;
     };
 
 
@@ -405,7 +411,7 @@ namespace lab4 {
              *
              * @param animals_len --- количество случайно сгенерированных животных.
              */
-            ContactZoo(size_t animals_len) : zoo_intencity_m(0.2), curr_hour_m(0) {
+            ContactZoo(size_t animals_len) : zoo_intencity_m(0.2), curr_hour_m(1) {
                 animals = std::vector<Animal*> ();
 
                 for (size_t i = 0; i < animals_len; i++) {
@@ -440,15 +446,119 @@ namespace lab4 {
 
             /*
              */
-            void skip_hour(void) noexcept {
+            void skipHour(void) noexcept {
                 this->updateAnimals();
 
-                float distance = 1 - this->zoo_intencity_m;
+                float distance = 1.0 - this->zoo_intencity_m;
                 float hour_sign = (this->curr_hour_m > 6) ? -1.0 : 1.0;
-                float random_step = (double)(rand() % 10) / 10.f;
+                float random_step = (double)(rand() % 100) * 0.001f;
 
-                this->zoo_intencity_m += hour_sign *(random_step + distance * 0.1);
+                this->zoo_intencity_m += hour_sign *(random_step + distance * 0.05);
                 this->applyHour();
+
+                if (this->curr_hour_m == 12) {
+                    this->curr_hour_m = 1;
+                    this->zoo_intencity_m  = (double)(rand() % 100) * 0.001f + 0.15;
+                    for (auto animal : this->animals) {
+                        animal->feed();
+                        animal->rest();
+                        animal->setState(Animal::AnimalState::Main);
+                    }
+                } else {
+                    this->curr_hour_m++;
+                }
+            }
+
+            void displayZoo() const noexcept {
+                const auto kind2str = [](Animal::AnimalType kind){
+                    using Type = Animal::AnimalType;
+                    switch (kind) {
+                        case Type::Cat:     return std::string("Cat");
+                        case Type::Dog:     return std::string("Dog");
+                        case Type::Wombat:  return std::string("Wombat");
+                    }
+                };
+
+                const auto state2str = [](Animal::AnimalState state) {
+                    using State = Animal::AnimalState;
+                    switch (state) {
+                        case State::Feed:   return std::string("Feed");
+                        case State::Main:   return std::string("Zoo");
+                        case State::Sleep:  return std::string("Sleep");
+                    }
+                };
+
+                const size_t len = 70;
+                const size_t indent = 10;
+
+                const auto nl = [](void){
+                    std::cout << "\n" << std::string(indent, ' ');
+                };
+                const auto hr = [&nl](void){
+                    std::cout << "  " << std::string(len - 4, '-'); nl();
+                };
+                const auto double_hr = [&nl](void){
+                    std::cout << std::string(len, '='); nl();
+                };
+                const auto cnt = [](const std::string &str, size_t view){
+                    if (view <= str.length()) {
+                        std::cout << std::string_view(str.data(), view);
+                    } else {
+                        size_t left_padding = (view - str.length()) / 2;
+                        size_t right_padding = (view - str.length()) / 2 + (view - str.length()) % 2;
+                        std::cout << std::string(left_padding, ' ') << str << std::string(right_padding, ' ');
+                    }
+                };
+                const auto b  = [](){ std::cout << "\x1b[1m"; };
+                const auto i  = [](){ std::cout << "\x1b[3m"; };
+                const auto clear  = [](){ std::cout << "\x1b[0m"; };
+                const auto color = [](int id){ std::cout << "\x1b[3" << id << "m"; };
+
+
+                nl();
+                b();
+                double_hr();
+                cnt("---- Contact Zoo ----", len); nl();
+                cnt(std::to_string(this->curr_hour_m) + "h, " + std::to_string(this->zoo_intencity_m), len); nl();
+                clear();
+                double_hr();
+
+                const size_t
+                    name_size = 40,
+                    state_size = 15,
+                    stats_size = len - name_size - state_size;
+
+                b();
+                color(3);
+                cnt("Name", name_size);
+                cnt("State", state_size);
+                cnt("A", stats_size / 3);
+                cnt("S", stats_size / 3);
+                cnt("T", stats_size / 3 + stats_size % 3);
+                clear();
+                nl();
+
+                for (const auto animal : this->animals) {
+                    const auto stats = animal->getStats();
+                    hr();
+                    i();
+                    color(2);
+                    cnt(kind2str(animal->getType()) + " \"" + stats.name + "\"",
+                            name_size);
+
+                    cnt(state2str(stats.state), state_size);
+
+                    color(4);
+                    cnt(std::to_string(stats.age),
+                            stats_size / 3);
+                    cnt(std::to_string(stats.starvness) + "%",
+                            stats_size / 3);
+                    cnt(std::to_string(stats.tiredness),
+                            stats_size / 3 + stats_size % 3);
+                    clear();
+                    nl();
+                }
+                nl();
             }
 
 
@@ -493,7 +603,6 @@ namespace lab4 {
                                 animal->rest();
                             } break;
                     }
-
                 }
             }
 
@@ -512,28 +621,56 @@ namespace lab4 {
 
         ContactZoo zoo (zoo_init_len);
 
-        std::cout << "Зоопарк:" << std::endl;
-        for (const auto &animal : zoo.getAnimals()) {
-            std::cout << animal->toString() << std::endl;
-        }
+        zoo.displayZoo();
 
         const std::string help_msg =
             "lab4:\n"
             "    \x1B[1;34mskip\x1b[0m - skip one hour changing nothing.\n"
-            "    \x1B[1;34add\x1b[0m <type> <name> <age> - add animal. (type must be one of Dog | Cat | Wombat)\n"
-            "    \x1B[1;34exit\x1b[0m";
+            "    \x1B[1;34madd\x1b[0m <type> <name> <age> - add animal. (type must be one of Dog | Cat | Wombat)\n"
+            "    \x1B[1;34mskipn\x1b[0m <n> - skip n hours."
+            "    \x1B[1;34mexit\x1b[0m";
         std::string command = "";
 
         std::cout << help_msg << std::endl;
-        std::cout << "\x1B[1;34lab4\x1b[0m>";
 
         while (true) {
+            std::cout << "\n\x1B[1;34mlab4\x1b[0m>";
             std::cin >> command;
 
             if (command == "skip") {
+                zoo.skipHour();
+                std::cout << std::endl;
 
+                zoo.displayZoo();
+                std::cout << std::endl;
+            } else if (command == "skipn") {
+                int n;
+                std::cin >> n;
+                for (size_t i = 0; i < n; i++){
+                    zoo.skipHour();
+                    std::cout << std::endl;
+
+                    zoo.displayZoo();
+                    std::cout << std::endl;
+                }
             } else if (command == "add") {
+                std::string type, name;
+                int age;
+                std::cin >> type >> name >> age;
 
+                if (type == "Dog") {
+                    zoo.insertAnimal(new Animal(new Dog(name, age)));
+                } else if (type == "Cat") {
+                    zoo.insertAnimal(new Animal(new Cat(name, age)));
+                } else if (type == "Wombat") {
+                    zoo.insertAnimal(new Animal(new Wombat(name, age)));
+                } else {
+                    std::cout << "invalid animal type: \"" << type << "\"" << std::endl;
+                }
+                std::cout << std::endl;
+
+                zoo.displayZoo();
+                std::cout << std::endl;
             } else if (command == "exit") {
                 break;
             }
