@@ -15,6 +15,9 @@ run: main
 debug: main
 	gdb $(target)run-labs
 
+chck-mem: main
+	valgrind --leak-check=full $(target)run-labs
+
 main: raylib $(objects)
 	@clang++ -o $(target)run-labs $(objects) $(flags) $(include-dirs) -L $(target) -lraylib
 
