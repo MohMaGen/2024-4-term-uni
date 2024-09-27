@@ -478,7 +478,6 @@ namespace lab5 {
                 push();
         };
 
-
         do {
             if (!parse_string) {
                 if (buffer[curr] == '"') switch_parse_string();
@@ -491,24 +490,44 @@ namespace lab5 {
         return vec;
     }
 
+    bool view_eq(std::string_view view, const char *value) {
+        return std::equal(view.begin(), view.end(), std::string_view{value}.begin());
+    }
+
     void runLab5(void) {
         Game game;
         char buffer[256] { 0 };
 
         while (!game.shouldExit()) {
-            std::cout << game << std::endl;
             std::cout << "\x1b[1;34m[ game ]\x1b[0m>";
+            std::cout.flush();
 
-            std::cin.getline(buffer, 256);
-            if (std::strlen(buffer) == 0) continue;
+            do std::cin.getline(buffer, 256); while (std::strlen(buffer) == 0);
 
             auto command = parseCommand(buffer);
             auto name = command[0];
-            std::cout << std::quoted(name) << std::endl;
-            if (std::equal(name.begin(), name.end(), std::string_view{"exit"}.begin())) {
-                game.exit();
-            }
 
+            if (view_eq(name, "exit" ) || view_eq(name, "e" )) {
+                game.exit();
+            } else if (view_eq(name, "help" ) || view_eq(name, "h" )) {
+                std::cout << " lab5 magic:\n\n"
+                    << " DISPLAY COMMANDS: \n"
+                    << "    - help, h              --- prints help command.\n"
+                    << "    - print, b [target]    --- prints value of the target.\n"
+                    << "                    Targets  can   be:  Mage [id], BattleGround,\n"
+                    << "                    Graveyard, Exile.\n"
+                    << "\n"
+                    << " GAME CONTROLL COMMANDS: \n"
+                    << "    - exit, e              --- exit lab5.\n"
+                    << "\n";
+            } else if (view_eq(name, "print" ) || view_eq(name, "p" )) {
+                auto target_name = command[1];
+                if (view_eq(target_name, "Mage")) {
+
+                }
+            } else {
+                std::cout << "Wrong command: " << std::quoted(name) << std::endl;
+            }
         }
 
     }
