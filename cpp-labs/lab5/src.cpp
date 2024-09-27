@@ -1,6 +1,11 @@
+#include <algorithm>
 #include <cstdint>
+#include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <ostream>
+#include <queue>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -108,18 +113,19 @@ namespace lab5 {
     }
 
 
-    struct Position { Coord x, y; };
+    using Position = std::pair<Coord, Coord>;
+    using CoordSize = Position;
     Position operator+(const Position &fst, const Position &snd) {
-        return Position { .x = fst.x + snd.x, .y = fst.y + snd.y };
+        return { fst.first + snd.first, fst.second + snd.second };
     }
     Position operator-(const Position &fst, const Position &snd) {
-        return Position { .x = fst.x - snd.x, .y = fst.y - snd.y };
+        return { fst.first - snd.first, fst.second - snd.second };
     }
     Position operator*(const Position &fst, std::int32_t v) {
-        return Position { .x = fst.x * v, .y = fst.y * v };
+        return {  fst.first * v, fst.second * v };
     }
     std::ostream& operator<<(std::ostream &os, Position pos) {
-        return os << "Position { " << pos.x << " " << pos.y << " }";
+        return os << "Position { " << pos.first << " " << pos.second << " }";
     }
 
     struct Effect {
@@ -253,6 +259,22 @@ namespace lab5 {
             virtual ~ITarget() {}
     };
 
+    std::ostream& operator<<(std::ostream& os, Team team) {
+        switch (team) {
+            case Team::Neutral: return os << "Team Neutral";
+            case Team::Orange: return os << "Team Orange";
+            case Team::Blue: return os << "Team Blue";
+        }
+    }
+
+    std::ostream& operator<<(std::ostream& os, TargetType type) {
+        switch (type) {
+            case TargetType::Active: return os << "TargetType Active";
+            case TargetType::Cell: return os << "TargetType Cell";
+            case TargetType::Wall: return os << "TargetType Wall";
+        }
+    }
+
 
     class Mage: ITarget {
         HP hp_m;
@@ -268,12 +290,12 @@ namespace lab5 {
         std::vector<Spell*> known_spells_m;
 
         public:
-            Mage(Team team, Position pos):
+            explicit Mage(Team team):
                 hp_m{ 100 },
                 mp_m{ 100 },
                 cp_m{ 5 },
                 team_m{ team },
-                pos_m{ pos },
+                pos_m{ Position { 0, 0 } },
                 curr_effects_m{},
                 spell_history_m{} {}
 
@@ -291,13 +313,25 @@ namespace lab5 {
             virtual TargetType getType(void) const override { return TargetType::Active; }
 
             virtual Team getTeam(void) const override { return this->team_m; }
+            friend std::ostream& operator<<(std::ostream& os, Mage mage);
     };
+    std::ostream& operator<<(std::ostream& os, Mage mage) {
+        os << "Mage { ( " << mage.hp_m << " ) ( " << mage.mp_m << " ) ( " << mage.cp_m << " ) ( " << mage.team_m << " ) ( " << mage.pos_m << " ) ( CurrEffects [ ";
+        for (auto [turns, effect] : mage.curr_effects_m) os << "( " << turns << ", " << effect << " )";
+        os << " ] ) ( KnownSpells [ ";
+        for (auto spell : mage.known_spells_m) os << "( " << spell << " )";
+        os << " ] ) ( History [ ";
+        for (auto spell : mage.spell_history_m) os << "( " << spell << " )";
+        return os << " ] )";
+    }
+
+
 
     class MageGenerator {
         size_t last_idx = 0;
         public:
             std::pair<MageId, Mage> getMage(Team team) {
-                Mage mage {team};
+                Mage mage { team };
                 return { last_idx++, mage };
             };
     };
@@ -380,21 +414,102 @@ namespace lab5 {
 
 
     class Game {
-        std::unordered_map<MageId, Mage> battle_ground, graveyard, exile;
+        std::unordered_map<MageId, Mage> battle_ground_pull_m, graveyard_pull_m, exile_pull_m;
+        CoordSize battle_ground_size_m;
+
+        public:
+            enum GameState { BlueTeamInit, OrangeTeamInit, InGame, Exit };
+
+            Game() : battle_ground_size_m( { 0, 0 } ), game_state_m( BlueTeamInit ) {}
+
+            GameState getState(void) const noexcept { return this->game_state_m; }
+            void exit(void) noexcept { this->game_state_m = Exit; }
+
+            bool shouldExit(void) {
+                return this->game_state_m == Exit;
+            }
+
+        private:
+            GameState game_state_m;
+        friend std::ostream& operator<<(std::ostream& os, Game game);
     };
+    std::ostream& operator<<(std::ostream& os, Game::GameState game_state) {
+        os << "GameState ";
+        switch (game_state) {
+            case Game::GameState::OrangeTeamInit: return os << "OrangeTeamInit";
+            case Game::GameState::BlueTeamInit: return os << "BlueTeamInit";
+            case Game::GameState::InGame: return os << "InGame";
+            case Game::GameState::Exit: return os << "Exit";
+        }
+    }
+
+    std::ostream& operator<<(std::ostream& os, Game game) {
+        os << "Game {  " << game.game_state_m << " ) ( Battleground: " << game.battle_ground_size_m << " [ ";
+
+        for (const auto [id, mage] : game.battle_ground_pull_m) {
+            os << "( " << id << " " << mage << " )";
+        }
+        os << " ] ) ( Graveyard: [ ";
+        for (const auto [id, mage] : game.graveyard_pull_m) {
+            os << "( " << id << " " << mage << " )";
+        }
+        os << " ] ) ( Exile: [ ";
+        for (const auto [id, mage] : game.exile_pull_m) {
+            os << "( " << id << " " << mage << " )";
+        }
+        os << " ] )";
+
+        return os;
+    }
+
+
+    std::vector<std::string_view> parseCommand(const char *buffer) {
+        std::vector<std::string_view> vec;
+        size_t start = 0, curr = 0;
+
+        bool parse_string = false;
+
+        const auto push = [&vec, &buffer, &curr, &start]() {
+            if (curr != start) vec.push_back({ buffer + start, curr - start });
+            start = curr + 1;
+        };
+        const auto switch_parse_string = [&] () {
+                parse_string = true;
+                push();
+        };
+
+
+        do {
+            if (!parse_string) {
+                if (buffer[curr] == '"') switch_parse_string();
+                if (buffer[curr] == ' ') push();
+            } else if (buffer[curr] == '"') switch_parse_string();
+        } while (buffer[curr++] != '\0');
+
+        if (curr != start) push();
+
+        return vec;
+    }
 
     void runLab5(void) {
-        auto spell = LongRangeSpell::build()
-            .withCost(5)
-            .withManaCost(10)
-            .withEffect({ .variant = Effect::Death })
-            .withDistance(100)
-            .alloc();
+        Game game;
+        char buffer[256] { 0 };
 
-        std::cout << *spell << std::endl;
+        while (!game.shouldExit()) {
+            std::cout << game << std::endl;
+            std::cout << "\x1b[1;34m[ game ]\x1b[0m>";
 
+            std::cin.getline(buffer, 256);
+            if (std::strlen(buffer) == 0) continue;
 
+            auto command = parseCommand(buffer);
+            auto name = command[0];
+            std::cout << std::quoted(name) << std::endl;
+            if (std::equal(name.begin(), name.end(), std::string_view{"exit"}.begin())) {
+                game.exit();
+            }
 
-        delete spell;
+        }
+
     }
 }
