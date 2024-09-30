@@ -955,7 +955,6 @@ namespace lab5 {
                     }
 
                 }
-                
 
                 game.callCommand(new AddMage(builder));
 
