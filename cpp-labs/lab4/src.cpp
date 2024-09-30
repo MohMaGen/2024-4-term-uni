@@ -222,7 +222,8 @@ namespace lab4 {
              */
             struct AnimalStats {
                 std::string name; std::uint8_t age, starvness, tiredness;
-                AnimalState state; std::uint8_t hours_in_state; };
+                AnimalState state; std::uint8_t hours_in_state;
+            };
 
 
             Animal() = delete;
@@ -627,7 +628,7 @@ namespace lab4 {
             "lab4:\n"
             "    \x1B[1;34mskip\x1b[0m - skip one hour changing nothing.\n"
             "    \x1B[1;34madd\x1b[0m <type> <name> <age> - add animal. (type must be one of Dog | Cat | Wombat)\n"
-            "    \x1B[1;34mskipn\x1b[0m <n> - skip n hours."
+            "    \x1B[1;34mskipn\x1b[0m <n> - skip n hours.\n"
             "    \x1B[1;34mexit\x1b[0m";
         std::string command = "";
 
@@ -671,6 +672,9 @@ namespace lab4 {
 
                 zoo.displayZoo();
                 std::cout << std::endl;
+            } else if (command == "help") {
+                std::cout << help_msg << std::endl;
+
             } else if (command == "exit") {
                 break;
             }
