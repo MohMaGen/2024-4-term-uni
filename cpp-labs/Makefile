@@ -2,7 +2,8 @@
 target := target/
 
 labs := $(wildcard lab*/)
-include-dirs := $(patsubst %, -I %, $(labs)) -I ./raylib/src/
+include-dirs := $(patsubst %, -I %, $(labs)) -I./raylib/src/
+ld-flags := -L./target -lraylib
 
 sources := $(patsubst %, %src.cpp, $(labs))
 objects := $(patsubst %/src.cpp, $(target)%.o, $(sources)) $(target)main.o
@@ -12,6 +13,10 @@ flags := -g3 -Wall -Werror -std=c++23 -pedantic -pedantic-errors -Wno-nested-ano
 run: main
 	$(target)run-labs
 
+run-lab5-gui:
+	clang++ -o $(target)lab5-gui ./lab5/src.cpp $(flags) $(include-dirs) $(ld-flags) -DLAB5_GUI=1 -fuse-ld=mold
+	./$(target)lab5-gui
+
 debug: main
 	gdb $(target)run-labs
 
@@ -19,7 +24,7 @@ chck-mem: main
 	valgrind --leak-check=full $(target)run-labs
 
 main: raylib $(objects)
-	@clang++ -o $(target)run-labs $(objects) $(flags) $(include-dirs) -L $(target) -lraylib
+	clang++ -o $(target)run-labs $(objects) $(flags) $(include-dirs) $(ld-flags)  -fuse-ld=mold
 
 $(objects): $(target)%.o: %/src.cpp
 	@clang++ -o $@ -c $< $(flags) $(include-dirs)
