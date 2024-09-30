@@ -134,7 +134,7 @@ namespace lab5 {
     bool operator<=(const Coord& fst, const Coord& snd) { return fst.v <= snd.v ; }
 
     struct TargetArea {
-        enum { Single, Splash } type;
+        enum { Single = 0, Splash } type;
         std::uint32_t radius;
 
         TargetArea(): type(Single), radius(0) {}
@@ -171,7 +171,7 @@ namespace lab5 {
         enum {
             Heal,           // @hp
             Death,          // nothing
-            Arise,          // @position
+            Arise,          // @hp
             Damage,         // @hp
             Poison,         // @hp
             LifeLink,       // @life_link
@@ -184,7 +184,6 @@ namespace lab5 {
             HP hp;
             MP mp;
             MageId mage_id;
-            Position pos;
             struct { size_t mage_id; std::uint8_t percent; } life_link;
         };
     };
@@ -228,7 +227,7 @@ namespace lab5 {
         switch (e.variant) {
             case Effect::Heal:          return os << "Effect :: Heal { "   << e.hp << " }";
             case Effect::Death:         return os << "Effect :: Death";
-            case Effect::Arise:         return os << "Effect :: Arise { " << e.pos << " }";
+            case Effect::Arise:         return os << "Effect :: Arise { " << e.hp << " }";
             case Effect::Damage:        return os << "Effect :: Damage { " << e.hp << " }";
             case Effect::Poison:        return os << "Effect :: Poison { " << e.hp << " }";
             case Effect::LifeLink:      return os << "Effect :: LifeLink { " << e.life_link.mage_id << " " << e.life_link.percent << " }";
@@ -283,27 +282,25 @@ namespace lab5 {
                     SpellBuilder() = delete;
                     ~SpellBuilder() { delete spell; }
 
-                    SpellBuilder& withManaCost(MP value) { this->spell->setManaCost(value); return *this; }
-                    SpellBuilder& withCost(CP value) { this->spell->setCost(value); return *this; }
-                    SpellBuilder& withApplyDuration(Dur value) { this->spell->setApplyDuration(value); return *this; }
-                    SpellBuilder& withEffectDuration(Dur value) { this->spell->setEffectDuration(value); return *this; }
-                    SpellBuilder& withDistance(Coord value) { this->spell->setDistance(value); return *this; }
-                    SpellBuilder& withTargetArea(TargetArea value) { this->spell->setTargetArea(value); return *this; }
-                    SpellBuilder& withEffect(Effect effect) { this->spell->pushEffect(effect); return *this; }
-                    Spell& mk(void) {
-                        auto &ret = *this->spell->clone();
-                        return ret;
-                    }
+                    SpellBuilder* withManaCost(MP value) { this->spell->setManaCost(value); return this; }
+                    SpellBuilder* withCost(CP value) { this->spell->setCost(value); return this; }
+                    SpellBuilder* withApplyDuration(Dur value) { this->spell->setApplyDuration(value); return this; }
+                    SpellBuilder* withEffectDuration(Dur value) { this->spell->setEffectDuration(value); return this; }
+                    SpellBuilder* withDistance(Coord value) { this->spell->setDistance(value); return this; }
+                    SpellBuilder* withTargetArea(TargetArea value) { this->spell->setTargetArea(value); return this; }
+                    SpellBuilder* withEffect(Effect effect) { this->spell->pushEffect(effect); return this; }
                     Spell* alloc(void) {
                         auto ret = this->spell->clone();
                         return ret;
                     }
             };
             friend SpellBuilder;
+        protected:
+            virtual std::string spellType(void) const noexcept = 0;
     };
 
     std::ostream& operator<<(std::ostream& os, const Spell &spell) {
-        os << "Spell { "
+        os << "Spell " << spell.spellType() << " { "
                 << spell.mana_cost_m << ", "
                 << spell.cost_m << ", "
                 << spell.apply_duration_m << ", "
@@ -419,9 +416,9 @@ namespace lab5 {
             << mage.cp_m << " ) ( " << mage.team_m << " ) ( " << mage.pos_m << " ) ( CurrEffects [ ";
         for (auto [turns, effect] : mage.curr_effects_m) os << "( " << turns << ", " << effect << " )";
         os << " ] ) ( KnownSpells [ ";
-        for (auto spell : mage.known_spells_m) os << "( " << spell << " )";
+        for (auto spell : mage.known_spells_m) os << "( " << *spell << " )";
         os << " ] ) ( History [ ";
-        for (auto spell : mage.spell_history_m) os << "( " << spell << " )";
+        for (auto spell : mage.spell_history_m) os << "( " << *spell << " )";
         return os << " ] )";
     }
 
@@ -443,6 +440,10 @@ namespace lab5 {
             virtual void setDistance(Coord dist) override { this->distance_m = bounds<Coord>(dist, 50, 100); }
             virtual void pushEffect(Effect effect) override { if (this->effects_m.size() < 1) this->effects_m.push_back(effect); }
             virtual void setEffectDuration(Dur value) override { this->effect_duration_m = 1; }
+        protected:
+            virtual std::string spellType(void) const noexcept override {
+                return "Long";
+            }
     };
 
     class ShortRangeSpell: public Spell {
@@ -462,6 +463,11 @@ namespace lab5 {
             virtual void setDistance(Coord dist) override { this->distance_m = bounds<Coord>(dist, 1, 10); }
             virtual void pushEffect(Effect effect) override { if (this->effects_m.size() < 2) this->effects_m.push_back(effect); }
             virtual void setEffectDuration(Dur value) override { this->effect_duration_m = 1; }
+
+        protected:
+            virtual std::string spellType(void) const noexcept override {
+                return "Short";
+            }
     };
 
     class SupportSpell: public Spell {
@@ -483,6 +489,11 @@ namespace lab5 {
             };
             virtual Spell* clone(void) const override { return new SupportSpell(*this); }
             virtual void setDistance(Coord dist) override { this->distance_m = bounds<Coord>(dist, 50, 100); }
+
+        protected:
+            virtual std::string spellType(void) const noexcept override {
+                return "Support";
+            }
     };
 
     class CurseSpell: public Spell {
@@ -501,6 +512,11 @@ namespace lab5 {
             };
             virtual Spell* clone(void) const override { return new CurseSpell(*this); }
             virtual void setDistance(Coord dist) override { this->distance_m = bounds<Coord>(dist, 50, 100); }
+
+        protected:
+            virtual std::string spellType(void) const noexcept override {
+                return "Curse";
+            }
     };
 
 
@@ -827,7 +843,6 @@ namespace lab5 {
     }
 
     namespace tty {
-
         std::vector<std::string_view> parseCommand(const char *buffer) {
             std::vector<std::string_view> vec;
             size_t start = 0, curr = 0;
@@ -951,9 +966,32 @@ namespace lab5 {
                     }
                     size_t count = rand() % 5 + 1;
                     for (size_t i = 0; i < count; i++) {
-                        Spell::SpellBuilder sb_cp = *sb;
-                    }
+                        Spell::SpellBuilder sb_cp (sb->alloc());
+                        sb_cp.withManaCost(rand()%100 + 1)
+                            ->withCost(rand()%10 + 1)
+                            ->withApplyDuration(rand()%3600 + 1)
+                            ->withEffectDuration(rand()%10 + 1)
+                            ->withDistance(rand()%100 + 1)
+                            ->withTargetArea([]{ return (rand()%2) ? TargetArea(rand()%10+1) : TargetArea(); }());
 
+                        size_t count = rand()%10 + 1;
+                        for (size_t i = 0; i <  count; i++)
+                            sb_cp.withEffect([]{
+                                switch (rand()%8) {
+                                    case 0: return Effect { .variant = Effect::Heal, .hp = rand()%20 + 5};
+                                    case 1: return Effect { .variant = Effect::Death };
+                                    case 2: return Effect { .variant = Effect::Arise, .hp = rand()%20 + 20};
+                                    case 3: return Effect { .variant = Effect::Damage, .hp = rand()%20 + 5};
+                                    case 4: return Effect { .variant = Effect::Poison, .hp = rand()%5 + 1};
+                                    case 5: return Effect { .variant = Effect::LifeLink, .life_link { .mage_id = 0, .percent = static_cast<uint8_t>(rand()%5 + 2)}};
+                                    case 6: return Effect { .variant = Effect::SkipTurn };
+                                    case 7:
+                                    default: return Effect { .variant = Effect::ManaRestore, .mp = rand()%5 + 1};
+                                }
+                            }());
+
+                        builder.appendSpell(sb_cp.alloc());
+                    }
                 }
 
                 game.callCommand(new AddMage(builder));
