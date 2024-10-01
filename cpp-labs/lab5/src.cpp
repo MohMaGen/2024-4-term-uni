@@ -18,7 +18,7 @@ namespace lab5 {
             do std::cin.getline(buffer, 256); while (std::strlen(buffer) == 0);
 
             auto command = tty::parseCommand(buffer);
-            tty::executeTTYCommand(command, game);
+            tty::executeTTYCommands(command, game);
 
             std::cin.clear();
         }

@@ -1,4 +1,5 @@
 #include <charconv>
+#include <iomanip>
 #include <lab5_tty.hpp>
 #include <algorithm>
 #include <cstddef>
@@ -13,7 +14,7 @@ namespace lab5 {
             " [command] ([command_args])\n"
             "\n"
             "\x1b[1;34mDISPLAY COMMANDS:\x1b[0m \n"
-            "    - help, h              --- prints help command.\n"
+            "    - help, h              --- prints help msg.\n"
             "    - print, b [<target>]  --- prints value of the target.\n"
             "                    Targets  can   be:  Mage [id], BattleGround,\n"
             "                    Graveyard, Exile, All.\n"
@@ -72,7 +73,7 @@ namespace lab5 {
 
             return vec;
         }
-        void executeTTYCommand(std::vector<std::string_view> command, game::Game &game) {
+        void executeTTYCommands(std::vector<std::string_view> command, game::Game &game) {
             if (command.size() == 0) {
                 std::cout << std::endl;
                 return;
@@ -222,7 +223,7 @@ namespace lab5 {
                 back::Mage::MageBuilder builder (curr_team_init);
                 std::cout << "\x1b[1;34menter pos: `x y`\x1b[0m> ";
                 math::Position pos { 0, 0 };
-                std::cin >> pos;
+                std::cin >> pos.x >> pos.y;
                 if (!std::cin) {
                     std::string value;
                     std::cin >> value;

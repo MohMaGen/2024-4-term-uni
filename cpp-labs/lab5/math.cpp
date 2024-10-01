@@ -139,7 +139,7 @@ namespace lab5 {
             return {  fst.width * v, fst.height * v };
         }
         std::ostream& operator<<(std::ostream &os, Size pos) {
-            return os << pos.width << "x" << pos.height;
+            return os << pos.width.v << "x" << pos.height.v;
         }
         std::istream& operator>>(std::istream &is, Size pos) {
             return is >> pos.width >> pos.height;

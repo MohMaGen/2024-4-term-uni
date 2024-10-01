@@ -5,7 +5,7 @@ include-dirs := $(patsubst %, -I %, $(labs)) -I./raylib/src/
 ld-flags := -L./target -lraylib
 
 sources := $(wildcard lab*/*.cpp)
-objects := $(patsubst %.cpp, $(target)%.o, $(sources)) $(target)main.o
+objects := $(patsubst %.cpp, $(target)%.o, $(sources)) $(target)main/src.o
 
 flags := -g3 -Wall -Werror -std=c++23 -pedantic -pedantic-errors -Wno-nested-anon-types
 
