@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <exception>
-#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -13,170 +12,10 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <unordered_map>
 #include <utility>
-#include <vector>
 #include <raylib.h>
 
 namespace lab5 {
-    template<typename T>
-    inline T bounds(T value, T min, T max) {
-        if (value < min) return min;
-        if (value > max) return max;
-        return value;
-    }
-
-    using MageId = size_t;
-
-    struct HP { std::uint8_t v; HP(int v): v(v) {}};
-    struct MP { std::uint8_t v; MP(int v): v(v) {}};
-    struct CP { std::uint8_t v; CP(int v): v(v) {}};
-    struct Dur { std::uint16_t v; Dur(int v): v(v) {}};
-    struct Coord { std::int32_t v; Coord(int v): v(v) {}};
-
-    std::ostream& operator<<(std::ostream& os, const HP &value) { return os << "HP " << (int) value.v; }
-    std::ostream& operator<<(std::ostream& os, const MP &value) { return os << "MP " << (int) value.v; }
-    std::ostream& operator<<(std::ostream& os, const CP &value) { return os << "CP " << (int) value.v; }
-    std::ostream& operator<<(std::ostream& os, const Dur &value) { return os << "Dur " << (int) value.v; }
-    std::ostream& operator<<(std::ostream& os, const Coord &value) { return os << "Coord " << (int) value.v; }
-
-    std::istream& operator>>(std::istream& is, HP &value) {
-        int v; is >> v;
-        value.v = v;
-        return is;
-    }
-    std::istream& operator>>(std::istream& is, MP &value) {
-        int v; is >> v;
-        value.v = v;
-        return is;
-    }
-    std::istream& operator>>(std::istream& is, CP &value) {
-        int v; is >> v;
-        value.v = v;
-        return is;
-    }
-    std::istream& operator>>(std::istream& is, Dur &value) {
-        int v; is >> v;
-        value.v = v;
-        return is;
-    }
-    std::istream& operator>>(std::istream& is, Coord &value) {
-        is >> value.v;
-        return is;
-    }
-
-    HP operator+(const HP& fst, const HP& snd) { return HP ( fst.v + snd.v ); }
-    MP operator+(const MP& fst, const MP& snd) { return MP ( fst.v + snd.v ); }
-    CP operator+(const CP& fst, const CP& snd) { return CP ( fst.v + snd.v ); }
-    Dur operator+(const Dur& fst, const Dur& snd) { return Dur ( fst.v + snd.v ); }
-    Coord operator+(const Coord& fst, const Coord& snd) { return Coord ( fst.v + snd.v ); }
-
-    HP operator-(const HP& fst, const HP& snd) { return HP ( fst.v - snd.v ); }
-    MP operator-(const MP& fst, const MP& snd) { return MP ( fst.v - snd.v ); }
-    CP operator-(const CP& fst, const CP& snd) { return CP ( fst.v - snd.v ); }
-    Dur operator-(const Dur& fst, const Dur& snd) { return Dur ( fst.v - snd.v ); }
-    Coord operator-(const Coord& fst, const Coord& snd) { return Coord ( fst.v - snd.v ); }
-
-    HP operator*(const HP& fst, const HP& snd) { return HP ( fst.v * snd.v ); }
-    MP operator*(const MP& fst, const MP& snd) { return MP ( fst.v * snd.v ); }
-    CP operator*(const CP& fst, const CP& snd) { return CP ( fst.v * snd.v ); }
-    Dur operator*(const Dur& fst, const Dur& snd) { return Dur ( fst.v * snd.v ); }
-    Coord operator*(const Coord& fst, const Coord& snd) { return Coord ( fst.v * snd.v ); }
-
-    HP operator*(const HP& fst, int v) { return HP ( fst.v * v ); }
-    MP operator*(const MP& fst, int v) { return MP ( fst.v * v ); }
-    CP operator*(const CP& fst, int v) { return CP ( fst.v * v ); }
-    Dur operator*(const Dur& fst, int v) { return Dur ( fst.v * v ); }
-    Coord operator*(const Coord& fst, int v) { return Coord ( fst.v * v ); }
-
-    HP operator/(const HP& fst, int v) { return HP ( fst.v / v ); }
-    MP operator/(const MP& fst, int v) { return MP ( fst.v / v ); }
-    CP operator/(const CP& fst, int v) { return CP ( fst.v / v ); }
-    Dur operator/(const Dur& fst, int v) { return Dur ( fst.v / v ); }
-    Coord operator/(const Coord& fst, int v) { return Coord ( fst.v / v ); }
-
-    HP operator/(const HP& fst, const HP& snd) { return HP ( fst.v / snd.v ); }
-    MP operator/(const MP& fst, const MP& snd) { return MP ( fst.v / snd.v ); }
-    CP operator/(const CP& fst, const CP& snd) { return CP ( fst.v / snd.v ); }
-    Dur operator/(const Dur& fst, const Dur& snd) { return Dur ( fst.v / snd.v ); }
-    Coord operator/(const Coord& fst, const Coord& snd) { return Coord ( fst.v / snd.v ); }
-
-    bool operator==(const HP& fst, const HP& snd) { return fst.v == snd.v; }
-    bool operator==(const MP& fst, const MP& snd) { return fst.v == snd.v; }
-    bool operator==(const CP& fst, const CP& snd) { return fst.v == snd.v; }
-    bool operator==(const Dur& fst, const Dur& snd) { return fst.v == snd.v; }
-    bool operator==(const Coord& fst, const Coord& snd) { return fst.v == snd.v ; }
-
-    bool operator>(const HP& fst, const HP& snd) { return fst.v > snd.v; }
-    bool operator>(const MP& fst, const MP& snd) { return fst.v > snd.v; }
-    bool operator>(const CP& fst, const CP& snd) { return fst.v > snd.v; }
-    bool operator>(const Dur& fst, const Dur& snd) { return fst.v > snd.v; }
-    bool operator>(const Coord& fst, const Coord& snd) { return fst.v > snd.v ; }
-
-    bool operator<(const HP& fst, const HP& snd) { return fst.v < snd.v; }
-    bool operator<(const MP& fst, const MP& snd) { return fst.v < snd.v; }
-    bool operator<(const CP& fst, const CP& snd) { return fst.v < snd.v; }
-    bool operator<(const Dur& fst, const Dur& snd) { return fst.v < snd.v; }
-    bool operator<(const Coord& fst, const Coord& snd) { return fst.v < snd.v ; }
-
-    bool operator>=(const HP& fst, const HP& snd) { return fst.v >= snd.v; }
-    bool operator>=(const MP& fst, const MP& snd) { return fst.v >= snd.v; }
-    bool operator>=(const CP& fst, const CP& snd) { return fst.v >= snd.v; }
-    bool operator>=(const Dur& fst, const Dur& snd) { return fst.v >= snd.v; }
-    bool operator>=(const Coord& fst, const Coord& snd) { return fst.v >= snd.v ; }
-
-    bool operator<=(const HP& fst, const HP& snd) { return fst.v <= snd.v; }
-    bool operator<=(const MP& fst, const MP& snd) { return fst.v <= snd.v; }
-    bool operator<=(const CP& fst, const CP& snd) { return fst.v <= snd.v; }
-    bool operator<=(const Dur& fst, const Dur& snd) { return fst.v <= snd.v; }
-    bool operator<=(const Coord& fst, const Coord& snd) { return fst.v <= snd.v ; }
-
-    struct TargetArea {
-        enum { Single = 0, Splash } type;
-        std::uint32_t radius;
-
-        TargetArea(): type(Single), radius(0) {}
-        TargetArea(std::uint32_t radius) : type(Splash), radius(radius) {}
-    };
-
-    std::ostream& operator<<(std::ostream& os, TargetArea a) {
-        switch (a.type) {
-            case TargetArea::Splash: return os << "TargetArea :: Splash { " << a.radius << " }";
-            case TargetArea::Single: return os << "TargetArea :: Single";
-        }
-    }
-
-
-    using Position = std::pair<Coord, Coord>;
-    using CoordSize = Position;
-    Position operator+(const Position &fst, const Position &snd) {
-        return { fst.first + snd.first, fst.second + snd.second };
-    }
-    Position operator-(const Position &fst, const Position &snd) {
-        return { fst.first - snd.first, fst.second - snd.second };
-    }
-    Position operator*(const Position &fst, std::int32_t v) {
-        return {  fst.first * v, fst.second * v };
-    }
-    std::ostream& operator<<(std::ostream &os, Position pos) {
-        return os << "Position { " << pos.first << " " << pos.second << " }";
-    }
-    std::istream& operator>>(std::istream &is, Position pos) {
-        return is >> pos.first >> pos.second;
-    }
-
-    struct Rect {
-        Position pos;
-        CoordSize size;
-        Rect(CoordSize size) : pos{0, 0}, size{size} {}
-        bool chckInside(Position pos) {
-            if ((pos.first >= this->pos.first + this->size.first) ||
-                    (pos.first < this->pos.first) ||
-                    (pos.second >= this->pos.second + this->size.second)||
-                    (pos.second < this->pos.second)) return false;
-            return true;
-        }
-    };
 
     struct Effect {
         enum {

@@ -4,12 +4,13 @@ labs := $(wildcard lab*/)
 include-dirs := $(patsubst %, -I %, $(labs)) -I./raylib/src/
 ld-flags := -L./target -lraylib
 
-sources := $(patsubst %, %src.cpp, $(labs))
+sources := $(wildcard lab*/*.cpp)
 objects := $(patsubst %/src.cpp, $(target)%.o, $(sources)) $(target)main.o
 
 flags := -g3 -Wall -Werror -std=c++23 -pedantic -pedantic-errors -Wno-nested-anon-types
 
 run: main
+	echo $(sources_)
 	$(target)run-labs
 
 run-lab5-gui:

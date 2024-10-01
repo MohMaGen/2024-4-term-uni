@@ -90,7 +90,7 @@
     show figure: align.with(center)
     set figure(supplement: [Рисунок])
     set figure.caption(separator: [ -- ])
-    set figure(numbering: num => 
+    set figure(numbering: num =>
       ((counter(heading.where(level:1)).get() + (num,)).map(str).join(".")),)
 
     show figure.where(kind:table): set figure.caption(position: top)
