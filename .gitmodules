@@ -4,3 +4,6 @@
 [submodule "cpp-labs/raylib"]
 	path = cpp-labs/raylib
 	url = https://github.com/raysan5/raylib.git
+[submodule "cpp-labs/nobuild"]
+	path = cpp-labs/nobuild
+	url = https://github.com/MohMaGen/nobuild.git

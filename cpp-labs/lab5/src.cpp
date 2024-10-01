@@ -428,11 +428,15 @@ namespace lab5 {
     std::ostream& operator<<(std::ostream& os, Mage mage) {
         os << "Mage { ( " << mage.hp_m << " ) ( " << mage.mp_m << " ) ( "
             << mage.cp_m << " ) ( " << mage.team_m << " ) ( " << mage.pos_m << " ) ( CurrEffects [ ";
-        for (auto [turns, effect] : mage.curr_effects_m) os << "( " << turns << ", " << effect << " )";
+        for (auto [turns, effect] : mage.curr_effects_m) 
+            os << "( " << turns << ", " << effect << " )";
+
         os << " ] ) ( KnownSpells [ ";
-        for (auto spell : mage.known_spells_m) os << "( " << *spell << " )";
+        for (auto spell : mage.known_spells_m)
+            if (spell != nullptr) os << "( " << *spell << " )";
         os << " ] ) ( History [ ";
-        for (auto spell : mage.spell_history_m) os << "( " << *spell << " )";
+        for (auto spell : mage.spell_history_m)
+            if (spell != nullptr) os << "( " << *spell << " )";
         return os << " ] )";
     }
 
@@ -466,7 +470,7 @@ namespace lab5 {
             static SpellBuilder* build() { return new SpellBuilder(new ShortRangeSpell()); }
 
             virtual Spell* clone(void) const override { return new ShortRangeSpell(*this); }
-            virtual bool checkCast(const ITarget& owner, const ITarget &target) const  noexcept override  { 
+            virtual bool checkCast(const ITarget& owner, const ITarget &target) const  noexcept override  {
                 if (owner.getCP() < this->getCost() || owner.getMP() < this->getManaCost()) return false;
 
                 return true;
@@ -1098,7 +1102,7 @@ namespace lab5 {
                         }
                         const auto chck = [i, j](auto pair) {
                             if (pair.second == nullptr) return false;
-                            return pair.second->getPos() == Position { i, j };
+                            return pair.second->getPos() == Position { j, i };
                         };
                         auto res = std::find_if(bf.begin(), bf.end(), chck);
 
@@ -1106,12 +1110,12 @@ namespace lab5 {
                             std::cout << std::string(cell_size, ' ');
                             continue;
                         }
-                            if (res->second->getTeam() == Team::Blue) {
-                                color(4);
-                            } else {
-                                color(1);
-                            }
-                            cnt(std::to_string(res->first), cell_size);
+                        if (res->second->getTeam() == Team::Blue) {
+                            color(4);
+                        } else {
+                            color(2);
+                        }
+                        cnt(std::to_string(res->first), cell_size);
                     }
                     clear();
                     nl();
@@ -1165,18 +1169,15 @@ namespace lab5 {
                         return;
                 }
 
-                if (command.size() == 1) {
-                    std::cout << "Enter amount of mages ot generate\n" << HELP_MSG << std::endl;
-                    return;
-                }
-
                 int n;
-                if (std::from_chars(command[1].begin(), command[1].end(), n).ec != std::errc{}) {
+                if (command.size() < 2 || std::from_chars(command[1].begin(), command[1].end(), n).ec != std::errc{}) {
                     std::cout << "Failed to parse int <n>" << std::endl;
                     return;
                 }
+
                 Mage::MageBuilder builder (curr_team_init);
                 if (curr_team_init == Team::Blue) {
+                    //builder.withPos(Position pos)
                 }
 
 
@@ -1195,7 +1196,12 @@ namespace lab5 {
                 Mage::MageBuilder builder (curr_team_init);
                 std::cout << "\x1b[1;34menter pos: `x y`\x1b[0m> ";
                 Position pos { 0, 0 };
-                std::cin >> pos;
+                std::cin >> pos.first.v >> pos.second.v;
+                if (!std::cin) {
+                    std::string value;
+                    std::cin >> value;
+                    std::cout << "Incorect position: " << value << std::endl;
+                }
                 builder.withPos(pos);
 
 
@@ -1318,6 +1324,8 @@ namespace lab5 {
 
             auto command = tty::parseCommand(buffer);
             tty::executeTTYCommand(command, game);
+
+            std::cin.clear();
         }
 
     }
