@@ -5,7 +5,7 @@ include-dirs := $(patsubst %, -I %, $(labs)) -I./raylib/src/
 ld-flags := -L./target -lraylib
 
 sources := $(wildcard lab*/*.cpp)
-objects := $(patsubst %/src.cpp, $(target)%.o, $(sources)) $(target)main.o
+objects := $(patsubst %.cpp, $(target)%.o, $(sources)) $(target)main.o
 
 flags := -g3 -Wall -Werror -std=c++23 -pedantic -pedantic-errors -Wno-nested-anon-types
 
@@ -26,7 +26,9 @@ chck-mem: main
 main: raylib $(objects)
 	clang++ -o $(target)run-labs $(objects) $(flags) $(include-dirs) $(ld-flags)  -fuse-ld=mold
 
-$(objects): $(target)%.o: %/src.cpp
+$(objects): $(target)%.o: %.cpp
+	@echo "make $@ object from $< source:"
+	@mkdir -p "$$(dirname $@)"
 	@clang++ -o $@ -c $< $(flags) $(include-dirs)
 
 raylib:

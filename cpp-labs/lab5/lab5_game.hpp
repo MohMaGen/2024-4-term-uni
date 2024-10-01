@@ -1,3 +1,5 @@
+#pragma once
+
 #include <functional>
 #include <iomanip>
 #include <lab5_back.hpp>
@@ -11,10 +13,14 @@ namespace lab5 {
      * Main game class. Owns mages and process Game Commands.
      */
     class Game {
-        std::unordered_map<math::MageId, back::Mage*> battle_ground_pull_m, graveyard_pull_m, exile_pull_m;
-        math::Size battle_ground_size_m;
-
         public:
+            using MagePtr = back::Mage*;
+
+            using MageMap = std::unordered_map<math::MageId, MagePtr>;
+
+            using MagePair = std::pair<math::MageId, MagePtr>;
+            using MageVec = std::vector<MagePair>;
+
             enum GameState { NoGame, BlueTeamInit, OrangeTeamInit, InGame, Exit };
 
             class CommandError: public std::exception {
@@ -36,20 +42,28 @@ namespace lab5 {
              */
             class GameCommand {
                 friend Game;
+
                 public:
                     virtual ~GameCommand() {}
+
                 protected:
 
                     /*
                      * Set state of the game.
                      *
+                     * This function used by inherit classes to work with game.
+                     *
                      * @param state -- new sate
                      */
                     void setState(Game& game, GameState state) { game.game_state_m = state; }
+
                     /*
                      * Set size of the battle field and exile all mages outside the
                      * field.
                      *
+                     * This function used by inherit classes to work with game.
+                     *
+                     * @param game -- game state to change by command.
                      * @param size -- new size.
                      */
                     void setSize(Game& game, math::Size size);
@@ -57,52 +71,54 @@ namespace lab5 {
                     /*
                      * Vector of all mages.
                      *
+                     * This function used by inherit classes to work with game.
+                     *
+                     * @param game -- game state to change by command.
                      */
-                    std::vector<std::pair<math::MageId, back::Mage*>> allMages(Game& game) {
-                        std::vector<std::pair<math::MageId, back::Mage*>> mages;
-                        for (auto mage: game.battle_ground_pull_m) mages.push_back(mage);
-                        for (auto mage: game.graveyard_pull_m) mages.push_back(mage);
-                        for (auto mage: game.exile_pull_m) mages.push_back(mage);
-                        return mages;
-                    }
+                    MageVec allMages(Game& game);
+
                     /*
                      * Create vector of all mages that in game.
+                     *
+                     * This function used by inherit classes to work with game.
+                     *
+                     * @param game -- game state to change by command.
                      */
-                    std::vector<std::pair<math::MageId, back::Mage*>> inGameMages(Game& game) {
-                        std::vector<std::pair<math::MageId, back::Mage*>> mages;
-                        for (auto mage: game.battle_ground_pull_m) mages.push_back(mage);
-                        return mages;
-                    }
+                    MageVec inGameMages(Game& game);
+
                     /*
                      * Create vector of all dead mages.
                      *
+                     * This function used by inherit classes to work with game.
+                     *
+                     * @param game -- game state to change by command.
                      */
-                    std::vector<std::pair<math::MageId, back::Mage*>> deadMages(Game& game) {
-                        std::vector<std::pair<math::MageId, back::Mage*>> mages;
-                        for (auto mage: game.graveyard_pull_m) mages.push_back(mage);
-                        return mages;
-                    }
+                    MageVec deadMages(Game& game);
+
                     /*
                      * Create vector of all exiled mages.
                      *
+                     * This function used by inherit classes to work with game.
+                     *
+                     * @param game -- game state to change by command.
                      */
-                    std::vector<std::pair<math::MageId, back::Mage*>> exiledMages(Game& game) {
-                        std::vector<std::pair<math::MageId, back::Mage*>> mages;
-                        for (auto mage: game.exile_pull_m) mages.push_back(mage);
-                        return mages;
-                    }
+                    MageVec exiledMages(Game& game);
 
                     /*
                      * Add new mage to game via mage generator.
                      *
+                     * This function used by inherit classes to work with game.
+                     *
+                     * @param game -- game state to change by command.
                      */
-                    void newMage(Game& game, back::Mage::MageBuilder& builder) {
-                        auto [id, mage] = game.generator_m.getMage(builder);
-                        game.battle_ground_pull_m.insert({id, mage});
-                    }
+                    void newMage(Game& game, back::Mage::MageBuilder& builder);
 
                     /*
                      * Get size of the battle ground.
+                     *
+                     * This function used by inherit classes to work with game.
+                     *
+                     * @param game -- game state to change by command.
                      */
                     math::Size getSize(Game& game) const { return game.battle_ground_size_m; }
 
@@ -134,6 +150,10 @@ namespace lab5 {
              * Call command and write to history.
              */
             void callCommand(GameCommand *cmd) {
+                if (cmd == nullptr) {
+                    std::cout << "Command is nullptr!!!!" << std::endl;
+                    return;
+                }
                 try {
                     (*cmd)(*this);
                     this->commands_history_m.push_back(cmd);
@@ -153,18 +173,37 @@ namespace lab5 {
                 return this->game_state_m == Exit;
             }
 
+            /*
+             * Sipmle back::Mage fabric to create mages with index.
+             */
             class MageGenerator {
-                size_t last_idx = 0;
+                // starts with 1, so mages with id 0 is nullptr.
+                size_t last_idx = 1;
+
                 public:
-                std::pair<math::MageId, back::Mage*> getMage(back::Mage::MageBuilder& builder) {
+                MagePair getMage(back::Mage::MageBuilder& builder) {
                     return { last_idx++, builder.make() };
                 };
             };
 
 
         private:
+            // Contains mages that can cast spells.
+            MageMap battle_ground_pull_m;
+            // Contains killed/dead mages.
+            MageMap graveyard_pull_m;
+            // Contains exiled mages.
+            MageMap exile_pull_m;
+            // Size of the battle ground.
+            math::Size battle_ground_size_m;
+
+            // Current state of the game.
             GameState game_state_m;
+
+            // History of all game commands.
             std::vector<GameCommand*> commands_history_m;
+
+            // Generator.
             MageGenerator generator_m;
         public:
             ~Game() {
@@ -336,11 +375,11 @@ namespace lab5 {
 
     };
 
-    class GetBattleFieldCOmmand: public Game::GameCommand {
+    class GetBattleFieldCommand: public Game::GameCommand {
         public:
             using BattleField = std::vector<std::pair<math::MageId, back::Mage*>>;
             using Iter = std::back_insert_iterator<BattleField>;
-            GetBattleFieldCOmmand(Iter iter, math::Size &size):  iter(iter), size(size) {}
+            GetBattleFieldCommand(Iter iter, math::Size &size):  iter(iter), size(size) {}
 
         protected:
             virtual void operator()(Game &game) override {
@@ -370,7 +409,7 @@ namespace lab5 {
 
         private:
             Iter iter;
-            CoordSize &size;
+            math::Size &size;
     };
     }
 }

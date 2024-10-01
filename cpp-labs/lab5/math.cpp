@@ -120,12 +120,12 @@ namespace lab5 {
             return {  fst.x * v, fst.y * v };
         }
         std::ostream& operator<<(std::ostream &os, Position pos) {
-            return os << "Position { " << pos.x << " " << pos.y << " }";
+            return os << pos.x << "," << pos.y;
         }
         std::istream& operator>>(std::istream &is, Position pos) {
             return is >> pos.x >> pos.y;
         }
-        Position operator==(const Position &fst, const Position &snd) {
+        bool operator==(const Position &fst, const Position &snd) {
             return fst.x == snd.x && fst.y == snd.y;
         }
 
@@ -139,15 +139,18 @@ namespace lab5 {
             return {  fst.width * v, fst.height * v };
         }
         std::ostream& operator<<(std::ostream &os, Size pos) {
-            return os << "Size { " << pos.width << " " << pos.height << " }";
+            return os << pos.width << "x" << pos.height;
         }
         std::istream& operator>>(std::istream &is, Size pos) {
             return is >> pos.width >> pos.height;
         }
+        bool operator==(const Size &fst, const Size &snd) {
+            return fst.width == snd.width && fst.height == snd.height;
+        }
 
 
-        Rect::Rect(Size size): size { size }, pos {0, 0} {}
-        Rect::Rect(Position pos, Size size): size { size }, pos { pos } {}
+        Rect::Rect(Size size): pos {0, 0}, size { size } {}
+        Rect::Rect(Position pos, Size size):  pos { pos }, size { size } {}
         bool Rect::chckInside(Position pos) {
             if ((pos.x >= this->pos.x + this->size.width) || (pos.x < this->pos.x) ||
                     (pos.y >= this->pos.y + this->size.height)|| (pos.y < this->pos.y))
