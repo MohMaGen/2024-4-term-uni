@@ -125,6 +125,9 @@ namespace lab5 {
         std::istream& operator>>(std::istream &is, Position pos) {
             return is >> pos.x >> pos.y;
         }
+        Position operator==(const Position &fst, const Position &snd) {
+            return fst.x == snd.x && fst.y == snd.y;
+        }
 
         Size operator+(const Size &fst, const Size &snd) {
             return { fst.width + snd.width, fst.height + snd.height };

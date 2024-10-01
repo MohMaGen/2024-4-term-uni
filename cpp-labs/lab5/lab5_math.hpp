@@ -117,12 +117,14 @@ namespace lab5 {
         Position operator+(const Position &fst, const Position &snd);
         Position operator-(const Position &fst, const Position &snd);
         Position operator*(const Position &fst, std::int32_t v);
+        Position operator==(const Position &fst, const Position &snd);
         std::ostream& operator<<(std::ostream &os, Position pos);
         std::istream& operator>>(std::istream &is, Position pos);
 
         struct Size { Coord width, height; };
         Size operator+(const Size &fst, const Size &snd);
         Size operator-(const Size &fst, const Size &snd);
+        Size operator==(const Size &fst, const Size &snd);
         Size operator*(const Size &fst, std::int32_t v);
         std::ostream& operator<<(std::ostream &os, Size pos);
         std::istream& operator>>(std::istream &is, Size pos);
