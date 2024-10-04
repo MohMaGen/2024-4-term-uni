@@ -35,6 +35,9 @@ namespace lab5 {
         class CommandException: public std::exception {
             std::string _name; std::string _msg;
             public:
+                CommandException(const std::string &name, const std::string &msg):
+                	_name(name), _msg(msg) {}
+
                 virtual const char * what(void) const noexcept override;
         };
 
