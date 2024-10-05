@@ -132,9 +132,9 @@ namespace lab5 {
         /*
          * Generate <n> mages in the current team.
          */
-        class GenMagesCommand: public Command {
+        class GenTeamCommand: public Command {
             public:
-                GenMagesCommand(game::Game& game, std::vector<std::string_view> &args)
+                GenTeamCommand(game::Game& game, std::vector<std::string_view> &args)
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
@@ -208,6 +208,59 @@ namespace lab5 {
             public:
                 ExitCommand(game::Game& game, std::vector<std::string_view> &args)
                     :Command(game, args) {}
+
+                virtual constexpr bool validateName(std::string_view name) const override;
+                virtual void call(void) const override;
+        };
+
+        /*
+         * Show battle state, current mage and available spells.
+         */
+        class ShowCommand: public Command {
+            public:
+                ShowCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
+                virtual constexpr bool validateName(std::string_view name) const override;
+                virtual void call(void) const override;
+        };
+
+        /*
+         * Choose spell as target.
+         */
+        class ChooseSpellCommand: public Command {
+            size_t &_curr_spell;
+            public:
+                ChooseSpellCommand(game::Game& game, std::vector<std::string_view> &args, size_t &curr_spell)
+                    :Command(game, args), _curr_spell(curr_spell) {}
+
+                virtual constexpr bool validateName(std::string_view name) const override;
+                virtual void call(void) const override;
+        };
+
+        /*
+         * Show available targets of current spell.
+         */
+        class DisplayTargetsCommand: public Command {
+            size_t _curr_spell;
+
+            public:
+                DisplayTargetsCommand(game::Game& game, std::vector<std::string_view> &args, size_t curr_spell)
+                    :Command(game, args), _curr_spell(curr_spell) {}
+
+                virtual constexpr bool validateName(std::string_view name) const override;
+                virtual void call(void) const override;
+        };
+
+
+        /*
+         * Cast spell.
+         */
+        class CastSpelLCommand: public Command {
+            size_t _curr_spell;
+            public:
+                CastSpelLCommand(game::Game& game, std::vector<std::string_view> &args, size_t curr_spell)
+                    :Command(game, args), _curr_spell(curr_spell) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
                 virtual void call(void) const override;

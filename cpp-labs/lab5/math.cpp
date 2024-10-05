@@ -158,5 +158,13 @@ namespace lab5 {
             else
                 return true;
         }
+
+
+        Position Rect::getRand(void) const {
+            return Position(
+                std::rand() % this->size.width.v + this->pos.x.v,
+                std::rand() % this->size.height.v + this->pos.y.v
+            );
+        }
     }
 }

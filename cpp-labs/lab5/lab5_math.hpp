@@ -6,7 +6,6 @@
 #include <cstring>
 #include <iostream>
 #include <ostream>
-#include <utility>
 
 
 namespace lab5 {
@@ -134,9 +133,12 @@ namespace lab5 {
         struct Rect {
             Position pos;
             Size size;
+
             Rect(Size size);
             Rect(Position pos, Size size);
+
             bool chckInside(Position pos);
+            Position getRand(void) const;
         };
     }
 }

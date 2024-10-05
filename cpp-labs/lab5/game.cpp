@@ -1,22 +1,22 @@
+#include "lab5_math.hpp"
 #include <algorithm>
-#include <iomanip>
 #include <lab5_game.hpp>
 
 namespace lab5 {
     namespace game {
         void Game::GameCommand::setSize(Game& game, math::Size size) {
-            game.battle_ground_size_m = size;
+            game._battle_ground_size = size;
             std::vector<std::pair<math::MageId, back::Mage*>> mages_to_exile;
 
-            for (auto [id, mage]: game.battle_ground_pull_m) {
+            for (auto [id, mage]: game._battle_ground_pull) {
                 if (!math::Rect(size).chckInside(mage->getPos())) {
                     mages_to_exile.push_back({id, mage});
                 }
             }
 
             for (auto [id, mage] : mages_to_exile) {
-                game.battle_ground_pull_m.erase(id);
-                game.exile_pull_m.insert({id, mage});
+                game._battle_ground_pull.erase(id);
+                game._exile_pull.insert({id, mage});
             }
 
         }
@@ -24,40 +24,40 @@ namespace lab5 {
 
         Game::MageVec Game::GameCommand::allMages(Game& game) {
             MageVec mages;
-            for (auto mage: game.battle_ground_pull_m) mages.push_back(mage);
-            for (auto mage: game.graveyard_pull_m) mages.push_back(mage);
-            for (auto mage: game.exile_pull_m) mages.push_back(mage);
+            for (auto mage: game._battle_ground_pull) mages.push_back(mage);
+            for (auto mage: game._graveyard_pull) mages.push_back(mage);
+            for (auto mage: game._exile_pull) mages.push_back(mage);
             return mages;
         }
 
         Game::MageVec Game::GameCommand::inGameMages(Game& game) {
             MageVec mages;
-            for (auto mage: game.battle_ground_pull_m) mages.push_back(mage);
+            for (auto mage: game._battle_ground_pull) mages.push_back(mage);
             return mages;
         }
 
         Game::MageVec Game::GameCommand::deadMages(Game& game) {
             MageVec mages;
-            for (auto mage: game.graveyard_pull_m) mages.push_back(mage);
+            for (auto mage: game._graveyard_pull) mages.push_back(mage);
             return mages;
         }
 
         Game::MageVec Game::GameCommand::exiledMages(Game& game) {
             MageVec mages;
-            for (auto mage: game.exile_pull_m) mages.push_back(mage);
+            for (auto mage: game._exile_pull) mages.push_back(mage);
             return mages;
         }
 
 
         void Game::GameCommand::newMage(Game& game, back::Mage::MageBuilder& builder) {
-            auto [id, mage] = game.generator_m.getMage(builder);
+            auto [id, mage] = game._generator.getMage(builder);
             const auto mages = this->inGameMages(game);
             if (std::find_if(mages.begin(), mages.end(),
                         [&mage](auto bg_mage) { return mage->getPos() == bg_mage.second->getPos(); }) != mages.end()) {
                 throw CommandError("newMageError", "Mage with this name exists.");
             }
 
-            game.battle_ground_pull_m.insert({id, mage});
+            game._battle_ground_pull.insert({id, mage});
         }
 
 
@@ -68,7 +68,7 @@ namespace lab5 {
             }
 
             (*cmd)(*this);
-            this->commands_history_m.push_back(cmd);
+            this->_commands_history.push_back(cmd);
         }
 
 
@@ -89,17 +89,17 @@ namespace lab5 {
         }
 
         std::ostream& operator<<(std::ostream& os, Game game) {
-            os << "Game {  " << game.game_state_m << " ) ( Battleground: " << game.battle_ground_size_m << " [ ";
+            os << "Game {  " << game._game_state << " ) ( Battleground: " << game._battle_ground_size << " [ ";
 
-            for (const auto [id, mage] : game.battle_ground_pull_m) {
+            for (const auto [id, mage] : game._battle_ground_pull) {
                 os << "( " << id << " " << mage << " )";
             }
             os << " ] ) ( Graveyard: [ ";
-            for (const auto [id, mage] : game.graveyard_pull_m) {
+            for (const auto [id, mage] : game._graveyard_pull) {
                 os << "( " << id << " " << mage << " )";
             }
             os << " ] ) ( Exile: [ ";
-            for (const auto [id, mage] : game.exile_pull_m) {
+            for (const auto [id, mage] : game._exile_pull) {
                 os << "( " << id << " " << mage << " )";
             }
             os << " ] )";
@@ -130,7 +130,7 @@ namespace lab5 {
                         [](auto, auto, auto place){ return place == QueryCommand::BG;}));
 
             math::Size game_size = this->getSize(game);
-            this->size = game_size;
+            _size = game_size;
 
             for (size_t y = 0; y < game_size.height; y++) {
                 for (size_t x = 0; x < game_size.width; x++) {
@@ -138,12 +138,32 @@ namespace lab5 {
                             return pair.second->getPos() == math::Position { y, x };
                             });
                     if (res == query.end()) {
-                        this->iter = std::pair { 0, nullptr };
+                        _iter = std::pair { 0, nullptr };
                     } else {
-                        this->iter = std::pair { res->first, res->second };
+                        _iter = std::pair { res->first, res->second };
                     }
                 }
             }
+        }
+
+        void GenMageCommand::operator()(Game &game) {
+            auto size = this->getSize(game);
+
+            back::Mage::MageBuilder builder (_team);
+            math::Rect bounds { math::Size{size.width / 2, size.height } };
+
+            if (_team == back::Team::Blue) {
+                bounds.pos = { 0, 0 };
+            }
+            if (_team == back::Team::Orange) {
+                bounds.pos = { size.width / 2, 0 };
+            }
+
+            while (true) try { 
+                builder.withPos(bounds.getRand());
+                this->newMage(game, builder);
+                break;
+            } catch (Game::CommandError &e) {}
         }
     }
 }

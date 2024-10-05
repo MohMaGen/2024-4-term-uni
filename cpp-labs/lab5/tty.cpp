@@ -1,3 +1,4 @@
+#include "lab5_game.hpp"
 #include <charconv>
 #include <iomanip>
 #include <lab5_tty.hpp>
@@ -5,6 +6,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <string_view>
 #include <vector>
 
 
@@ -22,6 +24,12 @@ namespace lab5 {
             "                    Graveyard, Exile, All.\n"
             "    - state                --- prints current game state\n"
             "    - battle_field         --- prints battle field with mages.\n"
+            "\n"
+            "\x1b[1;34mBATTLE COMMANDS:\x1b[0m\n"
+            "     - show                --- show current game state.\n"
+            "     - choose_spell <id>   --- chose spell with <id>.\n"
+            "     - targets             --- highlight targets of choosen spell.\n"
+            "     - cast <id>           --- cast speel to the target with <id>.\n"
             "\n"
             "\x1b[1;34mGAME INIT COMMANDS:\x1b[0m ( only in InitBlue & InitOrange states )\n"
             "    - next_team            --- finish creation of current team\n"
@@ -60,8 +68,7 @@ namespace lab5 {
                     push();
             };
 
-
-           	do {
+            do {
                 if (!parse_string) {
                     if (buffer[curr] == '"') switch_parse_string();
                     if (buffer[curr] == ' ') push();
@@ -79,7 +86,7 @@ namespace lab5 {
                 new DisplayBattleFieldCommand(game, command_args),
                 new NextTeamCommand(game, command_args),
                 new CurrTeamCommand(game, command_args),
-                new GenMagesCommand(game, command_args),
+                new GenTeamCommand(game, command_args),
                 new MakeMageCommand(game, command_args),
                 new ClearCommand(game, command_args),
                 new StartGuiCommand(game, command_args),
@@ -94,14 +101,18 @@ namespace lab5 {
             auto name = command_args[0];
             command_args.erase(command_args.begin());
 
-            auto it = std::find_if(commands.begin(), commands.end(),
+            auto res = std::find_if(commands.begin(), commands.end(),
                     [&name](auto const &cmd) { return cmd->validateName(name); });
 
-            if (it == commands.end()) {
+            if (res == commands.end()) {
                 std::cout << "wront command name: " << std::quoted( name ) << std::endl;
                 return;
             }
-            (*it)->call();
+
+            try { (*res)->call(); }
+            catch ( CommandException &e ) {
+                std::cout << "Failed with: " << e.what() << std::endl;
+            }
         }
         constexpr bool DisplayHelpCommand::validateName(std::string_view name) const {
             return view_eq(name, "help") || view_eq(name, "h");
@@ -121,7 +132,7 @@ namespace lab5 {
         constexpr bool CurrTeamCommand::validateName(std::string_view name) const {
             return view_eq(name, "curr_team");
         }
-        constexpr bool GenMagesCommand::validateName(std::string_view name) const {
+        constexpr bool GenTeamCommand::validateName(std::string_view name) const {
             return view_eq(name, "gen_mages");
         }
         constexpr bool MakeMageCommand::validateName(std::string_view name) const {
@@ -141,6 +152,21 @@ namespace lab5 {
         }
         constexpr bool ExitCommand::validateName(std::string_view name) const {
             return view_eq(name, "exit") || view_eq(name, "e");
+        }
+        constexpr bool ShowCommand::validateName(std::string_view name) const {
+            return view_eq(name, "show");
+        }
+
+        constexpr bool ChooseSpellCommand::validateName(std::string_view name) const {
+            return view_eq(name, "choose_spell");
+        }
+
+        constexpr bool DisplayTargetsCommand::validateName(std::string_view name) const {
+            return view_eq(name, "targets");
+        }
+
+        constexpr bool CastSpelLCommand::validateName(std::string_view name) const {
+            return view_eq(name, "cast");
         }
 
 
@@ -221,15 +247,17 @@ namespace lab5 {
             };
             const auto clear  = [](){ std::cout << "\x1b[0m"; };
             const auto color = [](int id){ std::cout << "\x1b[3" << id << "m"; };
-            const auto bg_color = [](int id){ std::cout << "\x1b[4" << id << "m"; };
+            const auto bg_color = [](int r, int g, int b){ std::cout << "\x1b[48;2;" << r << ";" << g << ";" << b  << "m"; };
             std::cout << "Battle field " << size << std::endl;
             nl();
             for (size_t y = 0; y < size.height; y++) {
                 for (size_t x = 0; x < size.width; x++) {
                     if ((y + x) % 2) {
-                        bg_color(7);
+                        clear();
+                        bg_color(85, 139, 47);
                     } else {
                         clear();
+                        bg_color(46, 125, 50);
                     }
                     const auto chck = [y, x](auto pair) {
                         if (pair.second == nullptr) return false;
@@ -267,7 +295,30 @@ namespace lab5 {
                                                 std::cout << "GAME INIT COMMANDS allowed only in InitBlue and InitOrange states." << std::endl;
             }
         }
-        void GenMagesCommand::call(void) const {
+        void GenTeamCommand::call(void) const {
+            back::Team curr_team_init;
+
+            using GameState = game::Game::GameState;
+            switch (_game.getState()) {
+                case GameState::BlueTeamInit: curr_team_init = back::Team::Blue; break;
+                case GameState::OrangeTeamInit: curr_team_init = back::Team::Orange; break;
+                default:
+                    std::cout << "GAME INIT COMMANDS allowed only in InitBlue and InitOrange states." << std::endl;
+                    return;
+            }
+
+            int n;
+            if (_args.size() < 1 || std::from_chars(_args[0].begin(), _args[0].end(), n).ec != std::errc{}) {
+                std::cout << "Failed to parse int <n>" << std::endl;
+                return;
+            }
+            try {
+                for (size_t i = 0; i < n; i++) {
+                    _game.callCommand(new game::GenMageCommand(curr_team_init));
+                }
+            } catch ( game::Game::CommandError &e ) {
+                std::cout << "Failed to create Team: " << e.what() << std::endl;
+            }
         }
         void MakeMageCommand::call(void) const {
             back::Team curr_team_init;
@@ -344,8 +395,8 @@ namespace lab5 {
             }
 
             try {
-                _game.callCommand(new game::AddMage(builder));
-            } catch ( CommandException &e ) {
+                _game.callCommand(new game::AddMageCommand(builder));
+            } catch ( game::Game::CommandError &e ) {
                 std::cout << "failed to create mage. " << e.what() << std::endl;
             }
         }
@@ -378,6 +429,27 @@ namespace lab5 {
         }
         void ExitCommand::call(void) const {
             _game.callCommand(new game::ExitCommand());
+        }
+
+        void ShowCommand::call(void) const {
+
+        }
+
+        void ChooseSpellCommand::call(void) const {
+        }
+
+        void DisplayTargetsCommand::call(void) const {
+        }
+
+        void CastSpelLCommand::call(void) const {
+        }
+
+        const char * CommandException::what(void) const noexcept {
+            char *buf = new char[_msg.size() + _name.size() + 4];
+            std::strcat(buf, _name.c_str());
+            std::strcat(buf, ": ");
+            std::strcat(buf, _msg.c_str());
+            return buf;
         }
     }
 }
