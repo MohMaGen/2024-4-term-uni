@@ -5,58 +5,103 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 
 
 namespace lab5 {
     namespace tty {
-        const char HELP_MSG[] = " lab5 magic:\n\n"
+        const char HELP_MSG[] =
+            "lab5 magic:\n\n"
             "\x1b[1;34mUSAGE:\x1b[0m\n"
             " [command] ([command_args])\n"
             "\n"
             "\x1b[1;34mDISPLAY COMMANDS:\x1b[0m \n"
-            "    - help, h              --- prints help msg.\n"
+            "    - help, h              --- prints help command.\n"
             "    - print, b [<target>]  --- prints value of the target.\n"
             "                    Targets  can   be:  Mage [id], BattleGround,\n"
             "                    Graveyard, Exile, All.\n"
             "    - state                --- prints current game state\n"
-            "    - battle_field         --- prints battle field with mag,            "    - next_team            --- finish creation of current team\n"
+            "    - battle_field         --- prints battle field with mages.\n"
+            "\n"
+            "\x1b[1;34mGAME INIT COMMANDS:\x1b[0m ( only in InitBlue & InitOrange states )\n"
+            "    - next_team            --- finish creation of current team\n"
             "                    and enter to next.\n"
             "    - curr_team            --- print current team.\n"
             "    - gen_mages <n>        --- generate <n> mages for current team\n"
-            "    - make_mage            --- run mage build,            "    - clear                --- clear\n"
-            "    - gui                  --- turn into gui m,            "    - new_game             --- start game\n"
+            "    - make_mage            --- run mage builder.\n"
+            "\n"
+            "\x1b[1;34mUI COMMANDS:\x1b[0m\n"
+            "    - clear                --- clear\n"
+            "    - gui                  --- turn into gui mod.\n"
+            "\n"
+            "\x1b[1;34mGAME CONTROLL COMMANDS:\x1b[0m\n"
+            "    - new_game             --- start game\n"
             "    - set_size <width> <height>\n"
             "                           --- set size of the battle field.\n "
             "                    This will exile all mages outside of the\n"
-            "                    new battle fie,b5,
-        bool view_eq(std::string_view view, const char *value) ,       std::vector<std::string_view> parseCommand(const char,            const auto push = [&vec, &buffer, &curr,,              if ,        }
+            "                    new battle field.\n"
+            "    - exit, e              --- exit lab5.\n"
+            "\n";
 
-        void executeTTYCommands(std::vector<std::string_view> command, game::Game &game) {
-			static const std::vector<Command*> commands {
-        			new DisplayHelpCommand(),
-                    new DisplayPrintCommand(),
-                    new DisplayStateCommand(),
-                    new DisplayBattleFieldCommand(),
-                    new NextTeamCommand(),
-                    new CurrTeamCommand(),
-                    new GenMagesCommand(),
-                    new MakeMageCommand(),
-                    new ClearCommand(),
-                    new StartGuiCommand(),
-                    new NewGameCommand(),
-                    new SetSizeCommand(),
-                    new ExitCommand(),
-			};
+        bool view_eq(std::string_view view, const char *value) {
+            return std::equal(view.begin(), view.end(), std::string_view { value } .begin());
+        }
 
-            if (command.size() == 0) {
+        std::vector<std::string_view> parseCommand(const char *buffer)  {
+            std::vector<std::string_view> vec;
+            size_t start = 0, curr = 0;
+            bool parse_string = false;
+            const auto push = [&vec, &buffer, &curr, &start]() {
+                if (curr != start) vec.push_back({ buffer + start, curr - start });
+                start = curr + 1;
+            };
+            const auto switch_parse_string = [&] () {
+                    parse_string = true;
+                    push();
+            };
+
+
+           	do {
+                if (!parse_string) {
+                    if (buffer[curr] == '"') switch_parse_string();
+                    if (buffer[curr] == ' ') push();
+                } else if (buffer[curr] == '"') switch_parse_string();
+            } while (buffer[curr++] != '\0');
+            if (curr != start) push();
+            return vec;
+       }
+
+        void executeTTYCommands(std::vector<std::string_view> command_args, game::Game &game) {
+            std::array<Command*, 13> commands {
+                new DisplayHelpCommand(game, command_args),
+                new DisplayPrintCommand(game, command_args),
+                new DisplayStateCommand(game, command_args),
+                new DisplayBattleFieldCommand(game, command_args),
+                new NextTeamCommand(game, command_args),
+                new CurrTeamCommand(game, command_args),
+                new GenMagesCommand(game, command_args),
+                new MakeMageCommand(game, command_args),
+                new ClearCommand(game, command_args),
+                new StartGuiCommand(game, command_args),
+                new NewGameCommand(game, command_args),
+                new SetSizeCommand(game, command_args),
+                new ExitCommand(game, command_args),
+            };
+            if (command_args.size() == 0) {
                 std::cout << std::endl;
                 return;
             }
-            auto name = command[0];
-			command.erase(0);
+            auto name = command_args[0];
+            command_args.erase(command_args.begin());
 
-			std::find_if(commands.begin(), commands.end(), [&name](auto cmd) { return cmd.validateName(name); });
+            auto it = std::find_if(commands.begin(), commands.end(),
+                    [&name](auto const &cmd) { return cmd->validateName(name); });
 
+            if (it == commands.end()) {
+                std::cout << "wront command name: " << std::quoted( name ) << std::endl;
+                return;
+            }
+            (*it)->call();
         }
         constexpr bool DisplayHelpCommand::validateName(std::string_view name) const {
             return view_eq(name, "help") || view_eq(name, "h");
@@ -83,7 +128,7 @@ namespace lab5 {
             return view_eq(name, "make_mage");
         }
         constexpr bool ClearCommand::validateName(std::string_view name) const {
-            return view_eq(name, "make_mage");
+            return view_eq(name, "clear") || view_eq(name, "\x0C");
         }
         constexpr bool StartGuiCommand::validateName(std::string_view name) const {
             return view_eq(name, "gui");
@@ -99,26 +144,26 @@ namespace lab5 {
         }
 
 
-        void DisplayHelpCommand::call(game::Game& game, std::vector<std::string_view> args) {
+        void DisplayHelpCommand::call(void) const {
             std::cout << HELP_MSG << std::endl;
         }
-        void DisplayPrintCommand::call(game::Game& game, std::vector<std::string_view> args) {
-       		auto query_func = [&] -> game::QueryCommand::Pred {
+        void DisplayPrintCommand::call(void) const {
+            auto query_func = [&] -> game::QueryCommand::Pred {
                 const auto err = [](math::MageId, back::Mage*, game::QueryCommand::Place) { return false; };
 
-                if (args.size() < 1) {
+                if (_args.size() < 1) {
                     return [](auto, auto, auto){return true;};
                 }
-                auto target_name = args[0];
+                auto target_name = _args[0];
 
                 if (view_eq(target_name, "Mage")) {
-                    if (args.size() < 2) {
+                    if (_args.size() < 2) {
                         std::cout << "\nmust specify mage id to print mage... see help.\n" << HELP_MSG << std::endl;
                         return err;
                     }
 
                     math::MageId id;
-                    if (std::from_chars(args[1].begin(), args[1].end(), id).ec != std::errc()) {
+                    if (std::from_chars(_args[1].begin(), _args[1].end(), id).ec != std::errc()) {
                         std::cout << "\nwrong Mage id: " << id << std::endl;
                         return err;
                     }
@@ -141,7 +186,7 @@ namespace lab5 {
 
             game::QueryCommand::MagesQuery query;
             auto iter = std::back_inserter(query);
-            game.callCommand(new game::QueryCommand(iter, query_func));
+            _game.callCommand(new game::QueryCommand(iter, query_func));
 
             if (query.size() == 0) {
                 std::cout << "Nothing matches query." << std::endl;
@@ -151,14 +196,14 @@ namespace lab5 {
             }
 
         }
-        void DisplayStateCommand::call(game::Game& game, std::vector<std::string_view> args) {
-            std::cout << game.getState() << std::endl;
+        void DisplayStateCommand::call(void) const {
+            std::cout << _game.getState() << std::endl;
         }
-        void DisplayBattleFieldCommand::call(game::Game& game, std::vector<std::string_view> args) {
+        void DisplayBattleFieldCommand::call(void) const {
             game::GetBattleFieldCommand::BattleField bf;
             math::Size size { 0, 0 };
 
-            game.callCommand(new game::GetBattleFieldCommand(std::back_inserter(bf), size));
+            _game.callCommand(new game::GetBattleFieldCommand(std::back_inserter(bf), size));
 
             const size_t cell_size = 6;
             const size_t indent = 5;
@@ -210,30 +255,30 @@ namespace lab5 {
             std::cout << std::endl;
 
         }
-        void NextTeamCommand::call(game::Game& game, std::vector<std::string_view> args) {
-            game.callCommand(new game::NextTeamCommand());
+        void NextTeamCommand::call(void) const {
+            _game.callCommand(new game::NextTeamCommand());
         }
-        void CurrTeamCommand::call(game::Game& game, std::vector<std::string_view> args) {
+        void CurrTeamCommand::call(void) const {
             using GameState = game::Game::GameState;
-            switch (game.getState()) {
+            switch (_game.getState()) {
                 case GameState::BlueTeamInit: std::cout << "Blue Team" << std::endl; break;
                 case GameState::OrangeTeamInit: std::cout << "Orange Team" << std::endl; break;
                 default:
-                    std::cout << "GAME INIT COMMANDS allowed only in InitBlue and InitOrange states." << std::endl;
+                                                std::cout << "GAME INIT COMMANDS allowed only in InitBlue and InitOrange states." << std::endl;
             }
         }
-        void GenMagesCommand::call(game::Game& game, std::vector<std::string_view> args) {
+        void GenMagesCommand::call(void) const {
         }
-        void MakeMageCommand::call(game::Game& game, std::vector<std::string_view> args) {
+        void MakeMageCommand::call(void) const {
             back::Team curr_team_init;
 
             using GameState = game::Game::GameState;
-            switch (game.getState()) {
+            switch (_game.getState()) {
                 case GameState::BlueTeamInit: curr_team_init = back::Team::Blue; break;
                 case GameState::OrangeTeamInit: curr_team_init = back::Team::Orange; break;
                 default:
-                    std::cout << "GAME INIT COMMANDS allowed only in InitBlue and InitOrange states." << std::endl;
-                    return;
+                                                std::cout << "GAME INIT COMMANDS allowed only in InitBlue and InitOrange states." << std::endl;
+                                                return;
             }
 
             back::Mage::MageBuilder builder (curr_team_init);
@@ -280,43 +325,47 @@ namespace lab5 {
                     size_t count = rand()%10 + 1;
                     for (size_t i = 0; i <  count; i++)
                         sb_cp.withEffect([]{
-                            switch (rand()%8) {
+                                switch (rand()%8) {
                                 case 0: return back::Effect { .variant = back::Effect::Heal, .hp = rand()%20 + 5};
                                 case 1: return back::Effect { .variant = back::Effect::Death };
                                 case 2: return back::Effect { .variant = back::Effect::Arise, .hp = rand()%20 + 20};
                                 case 3: return back::Effect { .variant = back::Effect::Damage, .hp = rand()%20 + 5};
                                 case 4: return back::Effect { .variant = back::Effect::Poison, .hp = rand()%5 + 1};
                                 case 5: return back::Effect { .variant = back::Effect::LifeLink,
-                                    .life_link { .mage_id = 0, .percent = static_cast<uint8_t>(rand()%5 + 2)}};
+                                .life_link { .mage_id = 0, .percent = static_cast<uint8_t>(rand()%5 + 2)}};
                                 case 6: return back::Effect { .variant = back::Effect::SkipTurn };
                                 case 7:
                                 default: return back::Effect { .variant = back::Effect::ManaRestore, .mp = rand()%5 + 1};
-                            }
-                        }());
+                                }
+                                }());
 
                     builder.appendSpell(sb_cp.alloc());
                 }
             }
 
-            game.callCommand(new game::AddMage(builder));
+            try {
+                _game.callCommand(new game::AddMage(builder));
+            } catch ( CommandException &e ) {
+                std::cout << "failed to create mage. " << e.what() << std::endl;
+            }
         }
-        void ClearCommand::call(game::Game& game, std::vector<std::string_view> args) {
-        	std::cout << "\x1b[1;1H\x1b[2J";
+        void ClearCommand::call(void) const {
+            std::cout << "\x1b[1;1H\x1b[2J";
         }
-        void StartGuiCommand::call(game::Game& game, std::vector<std::string_view> args) {
+        void StartGuiCommand::call(void) const {
         }
-        void NewGameCommand::call(game::Game& game, std::vector<std::string_view> args) {
-        	game.callCommand(new game::NewGameCommand());
+        void NewGameCommand::call(void) const {
+            _game.callCommand(new game::NewGameCommand());
         }
-        void SetSizeCommand::call(game::Game& game, std::vector<std::string_view> args) {
+        void SetSizeCommand::call(void) const {
             math::Size size { 0, 0 };
-            if (args.size() < 1 ||
-                    std::from_chars(args[0].begin(), args[0].end(), size.width.v).ec != std::errc{}) {
+            if (_args.size() < 1 ||
+                    std::from_chars(_args[0].begin(), _args[0].end(), size.width.v).ec != std::errc{}) {
                 std::cout << "Failed to parse <width>.\n" << HELP_MSG << std::endl;
                 return;
             }
-            if (args.size() < 2 ||
-                    std::from_chars(args[1].begin(), args[1].end(), size.height.v).ec != std::errc{}) {
+            if (_args.size() < 2 ||
+                    std::from_chars(_args[1].begin(), _args[1].end(), size.height.v).ec != std::errc{}) {
                 std::cout << "Failed to parse <height>.\n" << HELP_MSG << std::endl;
                 return;
             }
@@ -325,10 +374,10 @@ namespace lab5 {
                 return;
             }
             std::cout << size << std::endl;
-            game.callCommand(new game::SetGameSizeCommand(size));
+            _game.callCommand(new game::SetGameSizeCommand(size));
         }
-        void ExitCommand::call(game::Game& game, std::vector<std::string_view> args) {
-            game..callCommand(new game::ExitCommand());
+        void ExitCommand::call(void) const {
+            _game.callCommand(new game::ExitCommand());
         }
     }
 }

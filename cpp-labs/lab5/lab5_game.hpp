@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <functional>
 #include <lab5_back.hpp>
 #include <unordered_map>
@@ -23,12 +24,12 @@ namespace lab5 {
 
                 class CommandError: public std::exception {
                     public:
-                        std::string name;
-                        CommandError(const std::string &name): name(name) {}
+                        std::string _name, _err;
+                        CommandError(const std::string &name, const std::string &err): _name(name), _err(err) {}
 
                         virtual const char * what() const noexcept override {
-                            char *res = new char[name.size() + 1];
-                            std::strcpy(res, name.c_str());
+                            char *res = new char[_name.size() + _err.size() + 1];
+                            std::strcpy(res, (_name + _err).c_str());
                             return res;
                         }
 
@@ -165,7 +166,9 @@ namespace lab5 {
 
                     public:
                     MagePair getMage(back::Mage::MageBuilder& builder) {
-                        return { last_idx++, builder.make() };
+                        auto mage = builder.make();
+
+                        return { last_idx++, mage };
                     };
                 };
 

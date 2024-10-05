@@ -36,16 +36,23 @@ namespace lab5 {
             std::string _name; std::string _msg;
             public:
                 CommandException(const std::string &name, const std::string &msg):
-                	_name(name), _msg(msg) {}
+                    _name(name), _msg(msg) {}
 
                 virtual const char * what(void) const noexcept override;
         };
 
         class Command {
+            protected:
+                game::Game &_game;
+                std::vector<std::string_view> &_args;
             public:
+
+                Command(game::Game& game, std::vector<std::string_view> &args)
+                    : _game(game), _args(args) {}
                 virtual ~Command() {}
+
                 virtual constexpr bool validateName(std::string_view name) const = 0;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) = 0;
+                virtual void call() const = 0;
         };
 
         /*
@@ -53,8 +60,11 @@ namespace lab5 {
          */
         class DisplayHelpCommand: public Command {
             public:
+                DisplayHelpCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) override;
+                virtual void call(void) const override;
         };
 
         /*
@@ -64,8 +74,11 @@ namespace lab5 {
          */
         class DisplayPrintCommand: public Command {
             public:
+                DisplayPrintCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) override;
+                virtual void call(void) const override;
         };
 
         /*
@@ -73,8 +86,11 @@ namespace lab5 {
          */
         class DisplayStateCommand: public Command {
             public:
+                DisplayStateCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) override;
+                virtual void call(void) const override;
         };
 
         /*
@@ -82,8 +98,11 @@ namespace lab5 {
          */
         class DisplayBattleFieldCommand: public Command {
             public:
+                DisplayBattleFieldCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) override;
+                virtual void call(void) const override;
         };
 
         /*
@@ -91,8 +110,11 @@ namespace lab5 {
          */
         class NextTeamCommand: public Command {
             public:
+                NextTeamCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) override;
+                virtual void call(void) const override;
         };
 
         /*
@@ -100,8 +122,11 @@ namespace lab5 {
          */
         class CurrTeamCommand: public Command {
             public:
+                CurrTeamCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) override;
+                virtual void call(void) const override;
         };
 
         /*
@@ -109,8 +134,11 @@ namespace lab5 {
          */
         class GenMagesCommand: public Command {
             public:
+                GenMagesCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) override;
+                virtual void call(void) const override;
         };
 
         /*
@@ -118,8 +146,11 @@ namespace lab5 {
          */
         class MakeMageCommand: public Command {
             public:
+                MakeMageCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) override;
+                virtual void call(void) const override;
         };
 
         /*
@@ -127,8 +158,11 @@ namespace lab5 {
          */
         class ClearCommand: public Command {
             public:
+                ClearCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) override;
+                virtual void call(void) const override;
         };
 
         /*
@@ -136,8 +170,11 @@ namespace lab5 {
          */
         class StartGuiCommand: public Command {
             public:
+                StartGuiCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) override;
+                virtual void call(void) const override;
         };
 
         /*
@@ -145,8 +182,11 @@ namespace lab5 {
          */
         class NewGameCommand: public Command {
             public:
+                NewGameCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) override;
+                virtual void call(void) const override;
         };
 
         /*
@@ -154,8 +194,11 @@ namespace lab5 {
          */
         class SetSizeCommand: public Command {
             public:
+                SetSizeCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) override;
+                virtual void call(void) const override;
         };
 
         /*
@@ -163,8 +206,11 @@ namespace lab5 {
          */
         class ExitCommand: public Command {
             public:
+                ExitCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(game::Game& game, std::vector<std::string_view> args) override;
+                virtual void call(void) const override;
         };
     }
 }

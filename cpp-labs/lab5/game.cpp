@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iomanip>
 #include <lab5_game.hpp>
 
@@ -50,6 +51,12 @@ namespace lab5 {
 
         void Game::GameCommand::newMage(Game& game, back::Mage::MageBuilder& builder) {
             auto [id, mage] = game.generator_m.getMage(builder);
+            const auto mages = this->inGameMages(game);
+            if (std::find_if(mages.begin(), mages.end(),
+                        [&mage](auto bg_mage) { return mage->getPos() == bg_mage.second->getPos(); }) != mages.end()) {
+                throw CommandError("newMageError", "Mage with this name exists.");
+            }
+
             game.battle_ground_pull_m.insert({id, mage});
         }
 
@@ -60,16 +67,8 @@ namespace lab5 {
                 return;
             }
 
-            try {
-                (*cmd)(*this);
-                this->commands_history_m.push_back(cmd);
-            } catch (CommandError &e) {
-                std::cout << "Command " << std::quoted(e.name) << " failed with: " << e.what() << std::endl;
-            } catch (std::exception &e) {
-                std::cout << "Command failed with: " << e.what() << std::endl;
-            } catch (void *e) {
-                std::cout << "Command failed with unknown error" << std::endl;
-            }
+            (*cmd)(*this);
+            this->commands_history_m.push_back(cmd);
         }
 
 
