@@ -436,12 +436,15 @@ namespace lab5 {
         }
 
         void ChooseSpellCommand::call(void) const {
+
         }
 
         void DisplayTargetsCommand::call(void) const {
+
         }
 
         void CastSpelLCommand::call(void) const {
+
         }
 
         const char * CommandException::what(void) const noexcept {
@@ -453,3 +456,5 @@ namespace lab5 {
         }
     }
 }
+
+

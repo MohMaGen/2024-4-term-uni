@@ -48,6 +48,51 @@ namespace lab5 {
             return mages;
         }
 
+        math::MageId Game::GameCommand::getCurrMage(const Game& game) const {
+            if (game._game_state != Game::GameState::InGame)
+                throw Game::CommandError { "get Current Mage", "Battle wasnot started!" };
+
+            if (game._battle_order.size() >= game._current_mage)
+                throw Game::CommandError { "get Current Mage", "-- Somehow --  Invalid currant mage value!" };
+
+            return game._battle_order[game._current_mage];
+        }
+
+        back::Team Game::GameCommand::getCurrTeam(const Game& game) const {
+            if (game._game_state != Game::GameState::InGame)
+                throw Game::CommandError { "get Current Team", "Battle wasnot started!" };
+
+            return game._current_team;
+        }
+
+        std::vector<Game::MagePair> Game::GameCommand::getCurrOrder(Game& game) {
+            if (game._game_state != Game::GameState::InGame)
+                throw Game::CommandError { "get Current Order", "Battle wasnot started!" };
+
+            std::vector<Game::MagePair> order;
+            for (auto id : game._battle_order) try {
+                auto mage = game._battle_ground_pull.at(id);
+                order.push_back({ id, mage });
+            } catch (...) { continue; }
+
+            return order;
+        }
+
+        void Game::GameCommand::startBattle(Game& game) {
+            if (game._game_state != Game::GameState::OrangeTeamInit)
+                throw Game::CommandError { "Start Battle", "Had to init Orange team, before stats battle!" };
+
+            this->setState(game, Game::GameState::InGame);
+            game._battle_order = std::vector<math::MageId> {};
+
+            for (auto [id, mage] : game._battle_ground_pull)
+                if (mage->getTeam() == back::Team::Blue) game._battle_order.push_back(id);
+
+            for (auto [id, mage] : game._battle_ground_pull)
+                if (mage->getTeam() == back::Team::Orange) game._battle_order.push_back(id);
+        }
+
+
 
         void Game::GameCommand::newMage(Game& game, back::Mage::MageBuilder& builder) {
             auto [id, mage] = game._generator.getMage(builder);

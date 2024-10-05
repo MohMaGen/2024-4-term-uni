@@ -46,7 +46,6 @@ namespace lab5 {
                         virtual ~GameCommand() {}
 
                     protected:
-
                         /*
                          * Set state of the game.
                          *
@@ -55,6 +54,7 @@ namespace lab5 {
                          * @param state -- new sate
                          */
                         void setState(Game& game, GameState state) { game._game_state = state; }
+
 
                         /*
                          * Set size of the battle field and exile all mages outside the
@@ -67,6 +67,7 @@ namespace lab5 {
                          */
                         void setSize(Game& game, math::Size size);
 
+
                         /*
                          * Vector of all mages.
                          *
@@ -76,6 +77,7 @@ namespace lab5 {
                          */
                         MageVec allMages(Game& game);
 
+
                         /*
                          * Create vector of all mages that in game.
                          *
@@ -84,6 +86,7 @@ namespace lab5 {
                          * @param game -- game state to change by command.
                          */
                         MageVec inGameMages(Game& game);
+
 
                         /*
                          * Create vector of all dead mages.
@@ -103,6 +106,7 @@ namespace lab5 {
                          */
                         MageVec exiledMages(Game& game);
 
+
                         /*
                          * Get current mage. Works in @GameState::InGame state.
                          * Otherwise return MageId(0).
@@ -110,7 +114,8 @@ namespace lab5 {
                          * @param game -- game state to change by command.
                          * @return @math::MageId -- mage id.
                          */
-                        math::MageId getCurrMage(Game& game);
+                        math::MageId getCurrMage(const Game& game) const;
+
 
                         /*
                          * Get current team. Works in @GameState::InGame state.
@@ -119,7 +124,24 @@ namespace lab5 {
                          * @param game -- game state to change by command.
                          * @return @back::Team -- team.
                          */
-                        back::Team getCurrTeam(Game& team);
+                        back::Team getCurrTeam(const Game& game) const;
+
+
+                        /*
+                         * Get current battle order.
+                         * 
+                         * @param game -- game state to change by command.
+                         * @return mages -- reference to order vector..
+                         */
+                        std::vector<MagePair> getCurrOrder(Game& game);
+
+
+                        /*
+                         * Start battle.
+                         * 
+                         * @param game -- game state to change by command.
+                         */
+                        void startBattle(Game& game);
 
 
                         /*
@@ -139,6 +161,7 @@ namespace lab5 {
                          * @param game -- game state to change by command.
                          */
                         math::Size getSize(Game& game) const { return game._battle_ground_size; }
+
 
                         /*
                          * Execute command. This function runned by Game.
@@ -214,11 +237,15 @@ namespace lab5 {
                 // Generator.
                 MageGenerator _generator;
 
-                // Current mage.
-                math::MageId _current_mage;
 
                 // Current team.
                 back::Team _current_team;
+
+                // BattleOrder
+                std::vector<math::MageId> _battle_order { 0 };
+
+                // Current mage.
+                size_t _current_mage { 0 };
 
 
             public:
