@@ -124,74 +124,77 @@ namespace lab5 {
         std::ostream& operator<<(std::ostream& os, TargetType type);
 
         class Mage: ITarget {
-            math::HP hp_m;
-            math::MP mp_m;
-            math::CP cp_m;
-            Team team_m;
-            math::Position pos_m;
+            math::HP _hp;
+            math::MP _mp;
+            math::CP _cp;
+            Team _team;
+            math::Position _pos;
 
             struct EffectInTime { Effect effect; math::Dur turns; };
-            std::vector<EffectInTime> curr_effects_m;
+            std::vector<EffectInTime> _curr_effects;
 
-            std::vector<Spell*> spell_history_m;
-            std::vector<Spell*> known_spells_m;
+            std::vector<Spell*> _spell_history;
+            std::vector<Spell*> _known_spells;
 
             public:
             explicit Mage(Team team):
-                hp_m{ 100 },
-                mp_m{ 100 },
-                cp_m{ 5 },
-                team_m{ team },
-                pos_m{ math::Position { 0, 0 } },
-                curr_effects_m{},
-                spell_history_m{} {}
+                _hp{ 100 },
+                _mp{ 100 },
+                _cp{ 5 },
+                _team{ team },
+                _pos{ math::Position { 0, 0 } },
+                _curr_effects{},
+                _spell_history{} {}
             ~Mage() {
-                for (auto spell : spell_history_m) delete spell;
-                for (auto spell : known_spells_m) delete spell;
+                for (auto spell : _spell_history) delete spell;
+                for (auto spell : _known_spells) delete spell;
             }
 
-            virtual math::HP getHP(void) const override { return this->hp_m; };
-            virtual math::MP getMP(void) const override { return this->mp_m; };
-            virtual math::CP getCP(void) const override { return this->cp_m; };
-            virtual math::Position getPos(void) const override { return this->pos_m; };
+            std::vector<Spell*> getAvailableSpells(void);
+
+            virtual math::HP getHP(void) const override { return _hp; };
+            virtual math::MP getMP(void) const override { return _mp; };
+            virtual math::CP getCP(void) const override { return _cp; };
+            virtual math::Position getPos(void) const override { return _pos; };
 
             virtual void addEffect(math::Dur turns, Effect effects) override {
-                this->curr_effects_m.push_back({ .effect = effects, .turns = turns });
+                _curr_effects.push_back({ .effect = effects, .turns = turns });
             }
             virtual void addToHistory(Spell *spell) override {
-                this->spell_history_m.push_back(spell);
+                _spell_history.push_back(spell);
             }
+
 
             virtual TargetType getType(void) const override { return TargetType::Active; }
 
-            virtual Team getTeam(void) const override { return this->team_m; }
+            virtual Team getTeam(void) const override { return _team; }
             friend std::ostream& operator<<(std::ostream& os, Mage mage);
 
             class MageBuilder {
-                Mage *mage;
+                Mage *_mage;
                 public:
-                MageBuilder(Team team) : mage(new Mage(team)) {}
+                MageBuilder(Team team) : _mage(new Mage(team)) {}
 
                 MageBuilder& withPos(math::Position pos) {
-                    this->mage->pos_m = pos;
+                    _mage->_pos = pos;
                     return *this;
                 }
 
                 MageBuilder& appendSpell(Spell *spell) {
-                    if (this->mage->known_spells_m.size() == 10) return *this;
-                    this->mage->known_spells_m.push_back(spell);
+                    if (_mage->_known_spells.size() == 10) return *this;
+                    _mage->_known_spells.push_back(spell);
                     return *this;
                 }
 
                 Mage* make(void) {
-                    return new Mage(*this->mage);
+                    return new Mage(*_mage);
                 }
-                ~MageBuilder() { delete this->mage; }
+                ~MageBuilder() { delete _mage; }
             };
             friend MageBuilder;
         };
         std::ostream& operator<<(std::ostream& os, Mage mage);
-
+        std::string to_string(const Team& team);
 
 
         class LongRangeSpell: public Spell {

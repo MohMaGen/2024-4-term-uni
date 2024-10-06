@@ -3,6 +3,7 @@ target := target/
 labs := $(wildcard lab*/)
 include-dirs := $(patsubst %, -I %, $(labs)) -I./raylib/src/
 ld-flags := -L./target -lraylib
+incs := $(wildcard *.hpp)
 
 sources := $(wildcard lab*/*.cpp)
 objects := $(patsubst %.cpp, $(target)%.o, $(sources)) $(target)main/src.o
@@ -26,7 +27,7 @@ chck-mem: main
 main: raylib $(objects)
 	clang++ -o $(target)run-labs $(objects) $(flags) $(include-dirs) $(ld-flags)  -fuse-ld=mold
 
-$(objects): $(target)%.o: %.cpp
+$(objects): $(target)%.o: %.cpp $(incs)
 	@echo "make $@ object from $< source:"
 	@mkdir -p "$$(dirname $@)"
 	@clang++ -o $@ -c $< $(flags) $(include-dirs)

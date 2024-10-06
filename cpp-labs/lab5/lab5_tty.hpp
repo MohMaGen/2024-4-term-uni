@@ -214,6 +214,18 @@ namespace lab5 {
         };
 
         /*
+         * Start battle.
+         */
+        class StartBattleCommand: public Command {
+            public:
+                StartBattleCommand(game::Game& game, std::vector<std::string_view> &args)
+                    :Command(game, args) {}
+
+                virtual constexpr bool validateName(std::string_view name) const override;
+                virtual void call(void) const override;
+        };
+
+        /*
          * Show battle state, current mage and available spells.
          */
         class ShowCommand: public Command {

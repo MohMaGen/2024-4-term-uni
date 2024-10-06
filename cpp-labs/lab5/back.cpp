@@ -64,11 +64,7 @@ namespace lab5 {
         }
 
         std::ostream& operator<<(std::ostream& os, Team team) {
-            switch (team) {
-                case Team::Neutral: return os << "Team Neutral";
-                case Team::Orange: return os << "Team Orange";
-                case Team::Blue: return os << "Team Blue";
-            }
+            return os << "Team " << to_string(team);
         }
 
         std::ostream& operator<<(std::ostream& os, TargetType type) {
@@ -79,18 +75,31 @@ namespace lab5 {
             }
         }
         std::ostream& operator<<(std::ostream& os, Mage mage) {
-            os << "Mage { ( " << mage.hp_m << " ) ( " << mage.mp_m << " ) ( "
-                << mage.cp_m << " ) ( " << mage.team_m << " ) ( " << mage.pos_m << " ) ( CurrEffects [ ";
-            for (auto [turns, effect] : mage.curr_effects_m) 
+            os << "Mage { ( " << mage._hp << " ) ( " << mage._mp << " ) ( "
+                << mage._cp << " ) ( " << mage._team << " ) ( " << mage._pos << " ) ( CurrEffects [ ";
+            for (auto [turns, effect] : mage._curr_effects) 
                 os << "( " << turns << ", " << effect << " )";
 
             os << " ] ) ( KnownSpells [ ";
-            for (auto spell : mage.known_spells_m)
+            for (auto spell : mage._known_spells)
                 if (spell != nullptr) os << "( " << *spell << " )";
             os << " ] ) ( History [ ";
-            for (auto spell : mage.spell_history_m)
+            for (auto spell : mage._spell_history)
                 if (spell != nullptr) os << "( " << *spell << " )";
             return os << " ] )";
+        }
+
+        std::string to_string(const Team& team) {
+            switch (team) {
+                case Team::Neutral: return std::string("Neutral");
+                case Team::Orange:  return std::string("Orange");
+                case Team::Blue:    return std::string("Blue");
+            }
+        }
+
+
+        std::vector<Spell*> Mage::getAvailableSpells(void) {
+            return _known_spells;
         }
     }
 }

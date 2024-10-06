@@ -28,8 +28,8 @@ namespace lab5 {
                         CommandError(const std::string &name, const std::string &err): _name(name), _err(err) {}
 
                         virtual const char * what() const noexcept override {
-                            char *res = new char[_name.size() + _err.size() + 1];
-                            std::strcpy(res, (_name + _err).c_str());
+                            char *res = new char[_name.size() + _err.size() + 3];
+                            std::strcpy(res, (_name + ": " + _err).c_str());
                             return res;
                         }
 
@@ -404,6 +404,57 @@ namespace lab5 {
 
                 void display(std::ostream &os) const override {
                     os << "Gen Mage";
+                }
+        };
+
+        class GetCurrentMageCommand: public Game::GameCommand {
+            size_t& _curr_mage;
+            public:
+                GetCurrentMageCommand(size_t& curr_mage): _curr_mage(curr_mage) {}
+
+            protected:
+                virtual void operator()(Game &game) override;
+
+                void display(std::ostream &os) const override {
+                    os << "Get Current Mage";
+                }
+        };
+
+        class GetCurrentOrderCommand: public Game::GameCommand {
+            std::vector<Game::MagePair>& _mages;
+            public:
+                GetCurrentOrderCommand(std::vector<Game::MagePair> &mages): _mages(mages) {}
+
+            protected:
+                virtual void operator()(Game &game) override;
+
+                void display(std::ostream &os) const override {
+                    os << "Get Current Battle Order";
+                }
+        };
+
+        class GetCurrentTeamCommand: public Game::GameCommand {
+            back::Team& _team;
+            public:
+                GetCurrentTeamCommand(back::Team& team): _team(team) {}
+
+            protected:
+                virtual void operator()(Game &game) override;
+
+                void display(std::ostream &os) const override {
+                    os << "Get Current Team Order";
+                }
+        };
+
+        class StartBattleCommand: public Game::GameCommand {
+            public:
+                StartBattleCommand() {}
+
+            protected:
+                virtual void operator()(Game &game) override;
+
+                void display(std::ostream &os) const override {
+                    os << "Start Battle";
                 }
         };
     }
