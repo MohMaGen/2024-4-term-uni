@@ -457,5 +457,22 @@ namespace lab5 {
                     os << "Start Battle";
                 }
         };
+
+        class CastSpellCommand: public Game::GameCommand {
+            math::MageId _owner;
+            math::MageId _target;
+            size_t _spell_id;
+            public:
+                CastSpellCommand(math::MageId owner, size_t spell_id, math::MageId target) 
+                    : _owner(owner), _target(target), _spell_id(spell_id) {}
+
+            protected:
+                virtual void operator()(Game &game) override;
+
+                void display(std::ostream &os) const override {
+                    os << "Start Battle";
+                }
+
+        };
     }
 }

@@ -147,6 +147,9 @@ namespace lab5 {
         bool operator==(const Size &fst, const Size &snd) {
             return fst.width == snd.width && fst.height == snd.height;
         }
+        Coord distance_sq(Position fst, Position snd) {
+            return ((fst.x - snd.x)*(fst.x - snd.x) + (fst.y - snd.y)*(fst.y - snd.y));
+        }
 
 
         Rect::Rect(Size size): pos {0, 0}, size { size } {}

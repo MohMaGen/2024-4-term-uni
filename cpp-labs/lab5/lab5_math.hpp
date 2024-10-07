@@ -121,6 +121,7 @@ namespace lab5 {
         std::ostream& operator<<(std::ostream &os, Position pos);
         std::istream& operator>>(std::istream &is, Position pos);
         bool operator==(const Position &fst, const Position &snd);
+        Coord distance_sq(Position, Position);
 
         struct Size { Coord width, height; };
         Size operator+(const Size &fst, const Size &snd);

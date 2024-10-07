@@ -235,7 +235,7 @@ namespace lab5 {
                             case 3: return back::Effect { .variant = back::Effect::Damage, .hp = rand()%20 + 5};
                             case 4: return back::Effect { .variant = back::Effect::Poison, .hp = rand()%5 + 1};
                             case 5: return back::Effect { .variant = back::Effect::LifeLink,
-                            .life_link { .mage_id = 0, .percent = static_cast<uint8_t>(rand()%5 + 2)}};
+                                .life_link { .mage_id = 0, .percent = static_cast<uint8_t>(rand()%5 + 2)}};
                             case 6: return back::Effect { .variant = back::Effect::SkipTurn };
                             case 7:
                             default: return back::Effect { .variant = back::Effect::ManaRestore, .mp = rand()%5 + 1};
@@ -268,5 +268,23 @@ namespace lab5 {
         void StartBattleCommand::operator()(Game &game) {
             this->startBattle(game);
         }
+
+        void CastSpellCommand::operator()(Game &game) {
+            auto mages = this->allMages(game);
+            back::Mage *owner = nullptr, *target = nullptr;
+            for (auto [id, mage] : mages) {
+                if (id == _owner) owner = mage;
+                if (id == _target) target = mage;
+            }
+
+            if (owner == nullptr) throw new Game::CommandError("Cast spell", "Failed to find owner mage.");
+            if (target == nullptr) throw new Game::CommandError("Cast spell", "Failed to find target mage.");
+
+            auto spells = owner->getAvailableSpells();
+            if (_spell_id >= spells.size()) throw new Game::CommandError("Cast spell", "Invalid spell id number");
+
+            spells[_spell_id]->cast(*owner , *target); 
+        }
+
     }
 }

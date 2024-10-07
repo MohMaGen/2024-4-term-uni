@@ -33,20 +33,19 @@ namespace lab5 {
             } else {
                 std::cin.setstate(std::ios_base::failbit);
             }
-
             return is;
         }
 
         std::ostream& operator<<(std::ostream &os, Effect e) {
             switch (e.variant) {
-                case Effect::Heal:          return os << "Effect :: Heal { "   << e.hp << " }";
-                case Effect::Death:         return os << "Effect :: Death";
-                case Effect::Arise:         return os << "Effect :: Arise { " << e.hp << " }";
-                case Effect::Damage:        return os << "Effect :: Damage { " << e.hp << " }";
-                case Effect::Poison:        return os << "Effect :: Poison { " << e.hp << " }";
-                case Effect::LifeLink:      return os << "Effect :: LifeLink { " << e.life_link.mage_id << " " << e.life_link.percent << " }";
-                case Effect::SkipTurn:      return os << "Effect :: SkipTurn";
-                case Effect::ManaRestore:   return os << "Effect :: ManaRestor { " << e.mp << " }";
+                case Effect::Heal:          return os << "Heal { "   << e.hp << " }";
+                case Effect::Death:         return os << "Death";
+                case Effect::Arise:         return os << "Arise { " << e.hp << " }";
+                case Effect::Damage:        return os << "Damage { " << e.hp << " }";
+                case Effect::Poison:        return os << "Poison { " << e.hp << " }";
+                case Effect::LifeLink:      return os << "LifeLink { " << e.life_link.mage_id << " " << e.life_link.percent << " }";
+                case Effect::SkipTurn:      return os << "SkipTurn";
+                case Effect::ManaRestore:   return os << "ManaRestor { " << e.mp << " }";
             }
         }
 

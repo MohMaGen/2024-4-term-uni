@@ -254,7 +254,6 @@ namespace lab5 {
         };
 
 
-
         static inline void fg_color(int r, int g, int b) {
             std::cout << "\x1b[38;2;" << r << ";" << g << ";" << b  << "m";
         }
@@ -517,7 +516,7 @@ namespace lab5 {
 
                 for (size_t i = line_len * line; chkline(line, i); i++) {
                     if (curr.first == order[i].first) cnt("curr", size);
-                    else                        cnt("", size); 
+                    else                              cnt("", size); 
                 }
                 nl(0);
                 nl(indent);
@@ -545,12 +544,12 @@ namespace lab5 {
             try {
                 _game.callCommand(new game::GetCurrentMageCommand(curr));
             } catch(game::Game::CommandError *e) {
-                throw CommandException("Choose spell", "Failed to get current mage: " + std::string(e->what()));
+                throw new CommandException("Choose spell", "Failed to get current mage: " + std::string(e->what()));
             }
             size_t size = curr.second->getAvailableSpells().size();
 
 
-            if (size >= id) throw new CommandException("Choose spell", "Invalid <id> value: " + std::to_string(id));
+            if (id >= size) throw new CommandException("Choose spell", "Invalid <id> value: " + std::to_string(id));
             _curr_spell = id;
         }
 
@@ -564,19 +563,28 @@ namespace lab5 {
                 _game.callCommand(new game::GetCurrentOrderCommand(order));
                 _game.callCommand(new game::GetCurrentMageCommand(curr));
             } catch(game::Game::CommandError *e) {
-                throw CommandException("Choose spell", "Failed to get current mage: " + std::string(e->what()));
+                throw new CommandException("Display Targets", "Failed to get current mage: " + std::string(e->what()));
             }
-            //size_t size = order[curr].second->getAvailableSpells().size();
+            back::Spell *curr_spell = curr.second->getAvailableSpells()[_curr_spell];
+            std::vector<math::MageId> selected;
 
+            for (auto target: order)
+                if (curr.first == target.first && curr_spell->checkCast(*curr.second, *target.second)) 
+                    selected.push_back(target.first);
 
-            std::cout << "Curr" << _curr_spell << std::endl;
+            DisplayBattleFieldCommand(_game, _args, curr.first, selected);
         }
 
         void CastSpelLCommand::call(void) {
             if (_game.getState() != game::Game::GameState::InGame)
                 throw CommandException("Cast Spell", "Can be called only from `InGame` state.");
 
-            std::cout << "Curr" << _curr_spell << std::endl;
+            size_t id;
+            if (_args.size() < 1 || std::from_chars(_args[0].begin(), _args[0].end(), id).ec != std::errc{})
+                throw new CommandException("Cast Spell", "failed to parse <id>.");
+
+
+
         }
 
         void StartBattleCommand::call(void) {
