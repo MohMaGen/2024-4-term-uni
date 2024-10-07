@@ -52,7 +52,7 @@ namespace lab5 {
                 virtual ~Command() {}
 
                 virtual constexpr bool validateName(std::string_view name) const = 0;
-                virtual void call() const = 0;
+                virtual void call() = 0;
         };
 
         /*
@@ -64,7 +64,7 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -78,7 +78,7 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -90,19 +90,26 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
          * Prints battle field with mages on it.
          */
         class DisplayBattleFieldCommand: public Command {
+            math::MageId _curr_mage;
+            std::vector<math::MageId> _selected;
+
             public:
+                DisplayBattleFieldCommand(game::Game& game, std::vector<std::string_view> &args,
+                                          math::MageId curr_mage, std::vector<math::MageId> selected)
+                    :Command(game, args), _curr_mage{ curr_mage }, _selected{ selected } {}
+
                 DisplayBattleFieldCommand(game::Game& game, std::vector<std::string_view> &args)
-                    :Command(game, args) {}
+                    :Command(game, args), _curr_mage{ 0 }, _selected{ 0 } {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -114,7 +121,7 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -126,7 +133,7 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -138,7 +145,7 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -150,7 +157,7 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -162,7 +169,7 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -174,7 +181,7 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -186,7 +193,7 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -198,7 +205,7 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -210,7 +217,7 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -222,7 +229,7 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -234,7 +241,7 @@ namespace lab5 {
                     :Command(game, args) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -247,7 +254,7 @@ namespace lab5 {
                     :Command(game, args), _curr_spell(curr_spell) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
         /*
@@ -261,7 +268,7 @@ namespace lab5 {
                     :Command(game, args), _curr_spell(curr_spell) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
 
 
@@ -275,7 +282,7 @@ namespace lab5 {
                     :Command(game, args), _curr_spell(curr_spell) {}
 
                 virtual constexpr bool validateName(std::string_view name) const override;
-                virtual void call(void) const override;
+                virtual void call(void) override;
         };
     }
 }

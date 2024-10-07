@@ -41,13 +41,13 @@ namespace lab5 {
         class ITarget;
         class Spell {
             protected:
-                math::MP mana_cost_m = 1;
-                math::CP cost_m = 1;
-                math::Dur apply_duration_m = 1;
-                math::Dur effect_duration_m = 1;
-                math::Coord distance_m = 1;
-                math::TargetArea target_area_m = 1;
-                std::vector<Effect> effects_m = {};
+                math::MP _mana_cost = 1;
+                math::CP _cost = 1;
+                math::Dur _apply_duration = 1;
+                math::Dur _effect_duration = 1;
+                math::Coord _distance = 1;
+                math::TargetArea _target_area = 1;
+                std::vector<Effect> _effects = {};
 
 
             public:
@@ -59,39 +59,39 @@ namespace lab5 {
                 virtual bool checkCast(const ITarget& owner, const ITarget &target) const noexcept = 0;
                 virtual void cast(ITarget& owner, ITarget &target) const = 0;
 
-                virtual void setManaCost(math::MP value) { this->mana_cost_m = bounds<math::MP>(value, 1, 100); }
-                virtual void setCost(math::CP value) { this->cost_m = bounds<math::CP>(value, 1, 10); }
-                virtual void setApplyDuration(math::Dur value) { this->apply_duration_m = bounds<math::Dur>(value, 1, 3600); }
-                virtual void setEffectDuration(math::Dur value) { this->effect_duration_m = bounds<math::Dur>(value, 1, 10); }
-                virtual void setDistance(math::Coord value) { this->distance_m = bounds<math::Coord>(value, 1, 100); }
-                virtual void setTargetArea(math::TargetArea value) { this->target_area_m = value; }
-                virtual void pushEffect(Effect effect) { this->effects_m.push_back(effect); }
+                virtual void setManaCost(math::MP value) { _mana_cost = bounds<math::MP>(value, 1, 100); }
+                virtual void setCost(math::CP value) { _cost = bounds<math::CP>(value, 1, 10); }
+                virtual void setApplyDuration(math::Dur value) { _apply_duration = bounds<math::Dur>(value, 1, 3600); }
+                virtual void setEffectDuration(math::Dur value) { _effect_duration = bounds<math::Dur>(value, 1, 10); }
+                virtual void setDistance(math::Coord value) { _distance = bounds<math::Coord>(value, 1, 100); }
+                virtual void setTargetArea(math::TargetArea value) { _target_area = value; }
+                virtual void pushEffect(Effect effect) { _effects.push_back(effect); }
 
-                math::MP getManaCost(void) const noexcept { return this->mana_cost_m; }
-                math::CP getCost(void) const noexcept { return this->cost_m; }
-                math::Dur getApplyDuration(void) const noexcept { return this->apply_duration_m; }
-                math::Dur getEffectDuration(void) const noexcept { return this->effect_duration_m; }
-                math::Coord getDistance(void) const noexcept { return this->distance_m; }
-                math::TargetArea getTargetArea(void) const noexcept { return this->target_area_m; }
-                const std::vector<Effect> &getEffects(void) const noexcept { return this->effects_m; }
+                virtual math::MP getManaCost(void) const noexcept { return _mana_cost; }
+                virtual math::CP getCost(void) const noexcept { return _cost; }
+                virtual math::Dur getApplyDuration(void) const noexcept { return _apply_duration; }
+                virtual math::Dur getEffectDuration(void) const noexcept { return _effect_duration; }
+                virtual std::pair<math::Coord, math::Coord> getDistance(void) const noexcept { return { 1, _distance }; }
+                virtual math::TargetArea getTargetArea(void) const noexcept { return _target_area; }
+                virtual const std::vector<Effect> &getEffects(void) const noexcept { return _effects; }
 
                 class SpellBuilder {
-                    Spell *spell;
+                    Spell *_spell;
 
                     public:
-                    SpellBuilder(Spell *spell) : spell(spell) {}
+                    SpellBuilder(Spell *spell) : _spell(spell) { }
                     SpellBuilder() = delete;
-                    ~SpellBuilder() { delete spell; }
+                    ~SpellBuilder() { delete _spell; }
 
-                    SpellBuilder* withManaCost(math::MP value) { this->spell->setManaCost(value); return this; }
-                    SpellBuilder* withCost(math::CP value) { this->spell->setCost(value); return this; }
-                    SpellBuilder* withApplyDuration(math::Dur value) { this->spell->setApplyDuration(value); return this; }
-                    SpellBuilder* withEffectDuration(math::Dur value) { this->spell->setEffectDuration(value); return this; }
-                    SpellBuilder* withDistance(math::Coord value) { this->spell->setDistance(value); return this; }
-                    SpellBuilder* withTargetArea(math::TargetArea value) { this->spell->setTargetArea(value); return this; }
-                    SpellBuilder* withEffect(Effect effect) { this->spell->pushEffect(effect); return this; }
+                    SpellBuilder* withManaCost(math::MP value) { _spell->setManaCost(value); return this; }
+                    SpellBuilder* withCost(math::CP value) { _spell->setCost(value); return this; }
+                    SpellBuilder* withApplyDuration(math::Dur value) { _spell->setApplyDuration(value); return this; }
+                    SpellBuilder* withEffectDuration(math::Dur value) { _spell->setEffectDuration(value); return this; }
+                    SpellBuilder* withDistance(math::Coord value) { _spell->setDistance(value); return this; }
+                    SpellBuilder* withTargetArea(math::TargetArea value) { _spell->setTargetArea(value); return this; }
+                    SpellBuilder* withEffect(Effect effect) { _spell->pushEffect(effect); return this; }
                     Spell* alloc(void) {
-                        auto ret = this->spell->clone();
+                        auto ret = _spell->clone();
                         return ret;
                     }
                 };
@@ -210,9 +210,11 @@ namespace lab5 {
             virtual void cast(ITarget& owner, ITarget &target) const override {
             };
 
-            virtual void setDistance(math::Coord dist) override { this->distance_m = bounds<math::Coord>(dist, 50, 100); }
-            virtual void pushEffect(Effect effect) override { if (this->effects_m.size() < 1) this->effects_m.push_back(effect); }
-            virtual void setEffectDuration(math::Dur value) override { this->effect_duration_m = 1; }
+            virtual void setDistance(math::Coord dist) override { _distance = bounds<math::Coord>(dist, 50, 100); }
+            virtual void pushEffect(Effect effect) override { if (_effects.size() < 1) _effects.push_back(effect); }
+            virtual void setEffectDuration(math::Dur value) override { _effect_duration = 1; }
+
+            virtual std::pair<math::Coord, math::Coord> getDistance(void) const noexcept override { return { 50, _distance }; }
             protected:
             virtual std::string spellType(void) const noexcept override {
                 return "Long";
@@ -233,9 +235,9 @@ namespace lab5 {
             virtual void cast(ITarget& owner, ITarget &target) const override {
 
             };
-            virtual void setDistance(math::Coord dist) override { this->distance_m = bounds<math::Coord>(dist, 1, 10); }
-            virtual void pushEffect(Effect effect) override { if (this->effects_m.size() < 2) this->effects_m.push_back(effect); }
-            virtual void setEffectDuration(math::Dur value) override { this->effect_duration_m = 1; }
+            virtual void setDistance(math::Coord dist) override { _distance = bounds<math::Coord>(dist, 1, 10); }
+            virtual void pushEffect(Effect effect) override { if (_effects.size() < 2) _effects.push_back(effect); }
+            virtual void setEffectDuration(math::Dur value) override { _effect_duration = 1; }
 
             protected:
             virtual std::string spellType(void) const noexcept override {
@@ -255,13 +257,13 @@ namespace lab5 {
                 return true;
             }
             virtual void cast(ITarget& owner, ITarget &target) const override {
-                for (auto effect : this->effects_m) {
-                    target.addEffect(this->effect_duration_m, effect);
+                for (auto effect : _effects) {
+                    target.addEffect(_effect_duration, effect);
                 }
 
             };
             virtual Spell* clone(void) const override { return new SupportSpell(*this); }
-            virtual void setDistance(math::Coord dist) override { this->distance_m = bounds<math::Coord>(dist, 50, 100); }
+            virtual void setDistance(math::Coord dist) override { _distance = bounds<math::Coord>(dist, 50, 100); }
 
             protected:
             virtual std::string spellType(void) const noexcept override {
@@ -284,7 +286,7 @@ namespace lab5 {
 
             };
             virtual Spell* clone(void) const override { return new CurseSpell(*this); }
-            virtual void setDistance(math::Coord dist) override { this->distance_m = bounds<math::Coord>(dist, 50, 100); }
+            virtual void setDistance(math::Coord dist) override { _distance = bounds<math::Coord>(dist, 50, 100); }
 
             protected:
             virtual std::string spellType(void) const noexcept override {

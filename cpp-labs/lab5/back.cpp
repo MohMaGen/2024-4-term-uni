@@ -52,13 +52,13 @@ namespace lab5 {
 
         std::ostream& operator<<(std::ostream& os, const Spell &spell) {
             os << "Spell " << spell.spellType() << " { "
-                << spell.mana_cost_m << ", "
-                << spell.cost_m << ", "
-                << spell.apply_duration_m << ", "
-                << spell.distance_m << ", "
-                << spell.target_area_m << ", "
+                << spell._mana_cost << ", "
+                << spell._cost << ", "
+                << spell._apply_duration << ", "
+                << spell._distance << ", "
+                << spell._target_area << ", "
                 << "Effects [ ";
-            for (auto effect : spell.effects_m) os << effect << " ";
+            for (auto effect : spell._effects) os << effect << " ";
             os << "] ";
             return os << "}";
         }

@@ -114,7 +114,7 @@ namespace lab5 {
                          * @param game -- game state to change by command.
                          * @return @math::MageId -- mage id.
                          */
-                        math::MageId getCurrMage(const Game& game) const;
+                        MagePair getCurrMage(const Game& game) const;
 
 
                         /*
@@ -408,9 +408,9 @@ namespace lab5 {
         };
 
         class GetCurrentMageCommand: public Game::GameCommand {
-            size_t& _curr_mage;
+            Game::MagePair& _curr_mage;
             public:
-                GetCurrentMageCommand(size_t& curr_mage): _curr_mage(curr_mage) {}
+                GetCurrentMageCommand(Game::MagePair& curr_mage): _curr_mage(curr_mage) {}
 
             protected:
                 virtual void operator()(Game &game) override;

@@ -46,14 +46,16 @@ namespace lab5 {
             return mages;
         }
 
-        math::MageId Game::GameCommand::getCurrMage(const Game& game) const {
+        Game::MagePair Game::GameCommand::getCurrMage(const Game& game) const {
             if (game._game_state != Game::GameState::InGame)
                 throw new Game::CommandError { "get Current Mage", " Battle wasnot started!" };
 
             if (game._current_mage >= game._battle_order.size())
                 throw new Game::CommandError { "get Current Mage", " -- Somehow --  Invalid currant mage value!" };
 
-            return game._battle_order[game._current_mage];
+            math::MageId id =  game._battle_order[game._current_mage];
+
+            return { id , game._battle_ground_pull.at(id) };
         }
 
         back::Team Game::GameCommand::getCurrTeam(const Game& game) const {
@@ -204,7 +206,7 @@ namespace lab5 {
                 bounds.pos = { size.width / 2, 0 };
             }
 
-            for (size_t i = 0; i < 2; i++) {
+            for (size_t type = 0; type < 2; type++) {
                 back::Spell::SpellBuilder* sb;
                 switch (rand()%4) {
                 case 0: sb = back::LongRangeSpell::build();
@@ -214,7 +216,7 @@ namespace lab5 {
                 }
 
                 size_t count = rand() % 5 + 1;
-                for (size_t i = 0; i < count; i++) {
+                for (size_t spell = 0; spell < count; spell++) {
                     back::Spell::SpellBuilder sb_cp (sb->alloc());
                     sb_cp.withManaCost(rand()%100 + 1)
                         ->withCost(rand()%10 + 1)
@@ -224,7 +226,7 @@ namespace lab5 {
                         ->withTargetArea([]{ return (rand()%2) ? math::TargetArea(rand()%10+1) : math::TargetArea(); }());
 
                     size_t count = rand()%10 + 1;
-                    for (size_t i = 0; i <  count; i++)
+                    for (size_t effect = 0; effect < count; effect++)
                         sb_cp.withEffect([]{
                             switch (rand()%8) {
                             case 0: return back::Effect { .variant = back::Effect::Heal, .hp = rand()%20 + 5};

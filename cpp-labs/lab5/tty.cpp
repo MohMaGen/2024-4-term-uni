@@ -185,10 +185,10 @@ namespace lab5 {
         }
 
 
-        void DisplayHelpCommand::call(void) const {
+        void DisplayHelpCommand::call(void) {
             std::cout << HELP_MSG << std::endl;
         }
-        void DisplayPrintCommand::call(void) const {
+        void DisplayPrintCommand::call(void) {
             auto query_func = [&] -> game::QueryCommand::Pred {
                 const auto err = [](math::MageId, back::Mage*, game::QueryCommand::Place) { return false; };
 
@@ -235,7 +235,7 @@ namespace lab5 {
             }
 
         }
-        void DisplayStateCommand::call(void) const {
+        void DisplayStateCommand::call(void) {
             std::cout << _game.getState() << std::endl;
         }
 
@@ -255,9 +255,9 @@ namespace lab5 {
 
 
 
-        // static inline void fg_color(int r, int g, int b) {
-        //     std::cout << "\x1b[38;2;" << r << ";" << g << ";" << b  << "m";
-        // }
+        static inline void fg_color(int r, int g, int b) {
+            std::cout << "\x1b[38;2;" << r << ";" << g << ";" << b  << "m";
+        }
 
         static inline void clear() {
             std::cout << "\x1b[0m";
@@ -267,7 +267,7 @@ namespace lab5 {
             std::cout << "\n" << std::string(indent, ' '); 
         };
 
-        void DisplayBattleFieldCommand::call(void) const {
+        void DisplayBattleFieldCommand::call(void) {
             game::GetBattleFieldCommand::BattleField bf;
             math::Size size { 0, 0 };
 
@@ -275,7 +275,6 @@ namespace lab5 {
 
             const size_t cell_size = 6;
             const size_t indent = 5;
-            const auto color = [](int id){ std::cout << "\x1b[3" << id << "m"; };
             std::cout << "Battle field " << size << std::endl;
             nl(indent);
             for (size_t y = 0; y < size.height; y++) {
@@ -297,10 +296,17 @@ namespace lab5 {
                         std::cout << std::string(cell_size, ' ');
                         continue;
                     }
+
                     if (res->second->getTeam() == back::Team::Blue) {
-                        color(4);
+                        if (res->first == _curr_mage) fg_color(0, 0, 250); 
+                        else if (std::find(_selected.begin(), _selected.end(), res->first) != _selected.end()) 
+                            fg_color(150, 150, 250);
+                        else fg_color(0, 0, 130); 
                     } else {
-                        color(2);
+                        if (res->first == _curr_mage) fg_color(250, 130, 0); 
+                        else if (std::find(_selected.begin(), _selected.end(), res->first) != _selected.end()) 
+                            fg_color(250, 220, 150);
+                        else fg_color(130, 80, 0); 
                     }
                     cnt(std::to_string(res->first), cell_size);
                 }
@@ -311,10 +317,10 @@ namespace lab5 {
             std::cout << std::endl;
 
         }
-        void NextTeamCommand::call(void) const {
+        void NextTeamCommand::call(void) {
             _game.callCommand(new game::NextTeamCommand());
         }
-        void CurrTeamCommand::call(void) const {
+        void CurrTeamCommand::call(void) {
             using GameState = game::Game::GameState;
             switch (_game.getState()) {
                 case GameState::BlueTeamInit: std::cout << "Blue Team" << std::endl; break;
@@ -323,7 +329,7 @@ namespace lab5 {
                     throw new CommandException("Next Team", "GAME INIT COMMANDS allowed only in InitBlue and InitOrange state.");
             }
         }
-        void GenTeamCommand::call(void) const {
+        void GenTeamCommand::call(void) {
             back::Team curr_team_init;
 
             using GameState = game::Game::GameState;
@@ -347,7 +353,7 @@ namespace lab5 {
                 throw CommandException("Gen Team", std::string("Failed to create Team: ") + e->what());
             }
         }
-        void MakeMageCommand::call(void) const {
+        void MakeMageCommand::call(void) {
             back::Team curr_team_init;
 
             using GameState = game::Game::GameState;
@@ -426,15 +432,15 @@ namespace lab5 {
                 throw CommandException("Add Mage", std::string("failed to create mage. ") + e->what());
             }
         }
-        void ClearCommand::call(void) const {
+        void ClearCommand::call(void) {
             std::cout << "\x1b[1;1H\x1b[2J";
         }
-        void StartGuiCommand::call(void) const {
+        void StartGuiCommand::call(void) {
         }
-        void NewGameCommand::call(void) const {
+        void NewGameCommand::call(void) {
             _game.callCommand(new game::NewGameCommand());
         }
-        void SetSizeCommand::call(void) const {
+        void SetSizeCommand::call(void) {
             math::Size size { 0, 0 };
             if (_args.size() < 1 || std::from_chars(_args[0].begin(), _args[0].end(), size.width.v).ec != std::errc{})
                 throw new CommandException("Set Size", "Failed to parse <width>.\n");
@@ -451,15 +457,15 @@ namespace lab5 {
             }
         }
 
-        void ExitCommand::call(void) const {
+        void ExitCommand::call(void) {
             _game.callCommand(new game::ExitCommand());
         }
 
-        void ShowCommand::call(void) const {
+        void ShowCommand::call(void) {
             if (_game.getState() != game::Game::GameState::InGame)
                 throw new CommandException("Show", "Can be called only from `InGame` state.");
 
-            math::MageId curr;
+            game::Game::MagePair curr;
             std::vector<game::Game::MagePair> order;
 
 
@@ -469,7 +475,8 @@ namespace lab5 {
             } catch(game::Game::CommandError *e) {
                 throw CommandException("Show", "Failed to get Order and current mage: " + std::string(e->what()));
             }
-                DisplayBattleFieldCommand(_game, _args).call();
+            DisplayBattleFieldCommand(_game, _args, curr.first, { 0 }).call();
+
             std::cout << "\n";
             const size_t indent = 5;
 
@@ -509,7 +516,7 @@ namespace lab5 {
                 nl(indent);
 
                 for (size_t i = line_len * line; chkline(line, i); i++) {
-                    if (curr == order[i].first) cnt("curr", size);
+                    if (curr.first == order[i].first) cnt("curr", size);
                     else                        cnt("", size); 
                 }
                 nl(0);
@@ -518,7 +525,7 @@ namespace lab5 {
 
             cnt(" SPELLS ", 10); nl(indent);
             cnt("========", 10); nl(indent);
-            auto available_spells = order[curr].second->getAvailableSpells();
+            auto available_spells = curr.second->getAvailableSpells();
             for (size_t i = 0; i < available_spells.size(); i++) {
                 std::cout << "[ " << i << " ] " << *available_spells[i];
                 nl(indent);
@@ -526,32 +533,53 @@ namespace lab5 {
             nl(0);
         }
 
-        void ChooseSpellCommand::call(void) const {
+        void ChooseSpellCommand::call(void) {
             if (_game.getState() != game::Game::GameState::InGame)
                 throw new CommandException("Choose Spell", "Can be called only from `InGame` state.");
 
-            size_t n;
-            if (_args.size() < 1 || std::from_chars(_args[0].begin(), _args[0].end(), n).ec != std::errc{})
+            size_t id;
+            if (_args.size() < 1 || std::from_chars(_args[0].begin(), _args[0].end(), id).ec != std::errc{})
                 throw new CommandException("Choose Spell", "failed to parse <id>.");
 
-            _curr_spell = n;
+            game::Game::MagePair curr;
+            try {
+                _game.callCommand(new game::GetCurrentMageCommand(curr));
+            } catch(game::Game::CommandError *e) {
+                throw CommandException("Choose spell", "Failed to get current mage: " + std::string(e->what()));
+            }
+            size_t size = curr.second->getAvailableSpells().size();
+
+
+            if (size >= id) throw new CommandException("Choose spell", "Invalid <id> value: " + std::to_string(id));
+            _curr_spell = id;
         }
 
-        void DisplayTargetsCommand::call(void) const {
+        void DisplayTargetsCommand::call(void) {
             if (_game.getState() != game::Game::GameState::InGame)
                 throw new CommandException("Display Targets", "Can be called only from `InGame` state.");
+
+            game::Game::MagePair curr;
+            std::vector<game::Game::MagePair> order;
+            try {
+                _game.callCommand(new game::GetCurrentOrderCommand(order));
+                _game.callCommand(new game::GetCurrentMageCommand(curr));
+            } catch(game::Game::CommandError *e) {
+                throw CommandException("Choose spell", "Failed to get current mage: " + std::string(e->what()));
+            }
+            //size_t size = order[curr].second->getAvailableSpells().size();
+
 
             std::cout << "Curr" << _curr_spell << std::endl;
         }
 
-        void CastSpelLCommand::call(void) const {
+        void CastSpelLCommand::call(void) {
             if (_game.getState() != game::Game::GameState::InGame)
                 throw CommandException("Cast Spell", "Can be called only from `InGame` state.");
 
             std::cout << "Curr" << _curr_spell << std::endl;
         }
 
-        void StartBattleCommand::call(void) const {
+        void StartBattleCommand::call(void) {
             if (_game.getState() != game::Game::GameState::OrangeTeamInit)
                 throw new CommandException("Start battle", "Can be called only after Orange team had been inited.");
 
