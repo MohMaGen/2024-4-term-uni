@@ -60,7 +60,7 @@ namespace lab5 {
         public:
             HealEffect(size_t heal): _heal(heal) {}
             virtual void apply(ITarget *target) override {
-                target->decHP(_heal); 
+                target->incHP(_heal); 
             }
             virtual void display(std::ostream &os) const override {
                 os << "Heal `" << _heal  << "`";
@@ -213,7 +213,6 @@ namespace lab5 {
         Team _team;
         struct Effect{ size_t dur; IEffect *ptr; };
         std::vector<Effect> _effects;
-        std::vector<Effect> _last_changes;
         std::vector<Spell*> _available_spells;
         std::vector<Spell*> _history;
 
@@ -232,25 +231,28 @@ namespace lab5 {
                 return spells;
             }
             Changes showLastChanges(void) const noexcept {
-                return _last_changes;
+                std::vector<Effect> changes;
+                for (auto [dur, effect] : _effects) {
+                    if (dur == 0) continue;
+                    changes.push_back({dur, effect});
+                }
+                return changes;
             }
 
             size_t getHP(void) { return _hp; }
 
             void applySpells(std::vector<Spell*> spells) {
-                _last_changes = {};
                 for (auto spell : spells) {
                     auto [effects, dur] = spell->cast();
                     for (auto effect : effects) {
                         if (effect == NULL) continue;
                         _effects.push_back({dur, effect});
-                        _last_changes.push_back({dur, effect});
                     }
                 }
 
             }
             void applyEffects(void) {
-                for (auto [dur, effect] : _effects) {
+                for (auto &[dur, effect] : _effects) {
                     if (dur == 0) continue;
                     effect->apply(this); 
                     dur--;
@@ -343,6 +345,7 @@ namespace lab5 {
 
         while (true) {
             for (size_t curr_id = 0; curr_id < mages.size(); curr_id++) {
+                if (mages[curr_id]->getHP() <= 0) continue;
                 if (mages[curr_id]->isSleep() ) {
                     std::cout << "[" << curr_id << "] Mage " << curr_id << " is sleeping..." << std::endl;
                     continue;
@@ -381,6 +384,7 @@ namespace lab5 {
                     std::cout << "Available targets:\n";
                     size_t count = 0;
                     for (size_t target_id = 0; target_id < mages.size(); target_id++) {
+                        if (mages[target_id]->getHP() <= 0) continue;
                         if (curr_spell->canCast(mages[curr_id], mages[target_id])) {
                             std::cout << "\t:: [ " << target_id << " ]: "
                                       << *mages[target_id] << std::endl;
@@ -403,9 +407,9 @@ namespace lab5 {
 
             std::cout << "End of turn. Aplying effects..." << std::endl;
             for (size_t i = 0; i < mages.size(); i++) {
-                mages[i]->applyEffects();
                 std::cout << "Mage " << i << ": " << std::endl;
                 std::cout << "Changes: " << mages[i]->showLastChanges() << std::endl;
+                mages[i]->applyEffects();
             }
 
             std::vector<Mage*> new_mages;
