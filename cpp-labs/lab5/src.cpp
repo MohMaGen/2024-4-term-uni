@@ -252,6 +252,7 @@ namespace lab5 {
 
             }
             void applyEffects(void) {
+                _sleep = false;
                 for (auto &[dur, effect] : _effects) {
                     if (dur == 0) continue;
                     effect->apply(this); 
@@ -342,66 +343,103 @@ namespace lab5 {
             mages[i*2+1] = new Mage(Team::Orange, width, height); 
         }
 
-
         while (true) {
-            for (size_t curr_id = 0; curr_id < mages.size(); curr_id++) {
-                if (mages[curr_id]->getHP() <= 0) continue;
-                if (mages[curr_id]->isSleep() ) {
-                    std::cout << "[" << curr_id << "] Mage " << curr_id << " is sleeping..." << std::endl;
-                    continue;
+            std::cout << "Simulate battle?(y/n) ";
+            char v;
+            std::cin >> v;
+            if (v != 'y') {
+                for (size_t curr_id = 0; curr_id < mages.size(); curr_id++) {
+                    if (mages[curr_id]->getHP() <= 0) continue;
+                    if (mages[curr_id]->isSleep() ) {
+                        std::cout << "[" << curr_id << "] Mage " << curr_id << " is sleeping..." << std::endl;
+                        continue;
+                    }
+                    std::cout << "Curr mage: [" << curr_id << "] " << *mages[curr_id] << std::endl;
+
+                    while (true) {
+                        size_t spell_id;
+                        std::cout << "Available spells:" << std::endl;
+                        auto available_spells =  mages[curr_id]->availableSpells();
+                        if (available_spells.size() == 0) {
+                            std::cout << "Mage has no any available spells..." << std::endl;
+                            continue;
+                        }
+                        for (auto spell : available_spells) 
+                            std::cout << " :: [ " << spell << " ]: "
+                                      << *mages[curr_id]->getSpell(spell) << std::endl; 
+                        std::cout << " :: [ " << available_spells.size()   << " ]" << "skip." << std::endl;
+                        std::cout << " :: [ " << available_spells.size()+1 << " ]" << "show mages." << std::endl;
+                        std::cout << "Choose spell to cast: ";
+                        std::cin >> spell_id;
+                        if (!std::cin) continue;
+                        if (spell_id == available_spells.size()) break;
+                        if (spell_id == available_spells.size()+1) {
+                            for (size_t i = 0; i < mages.size(); i++) {
+                                std::cout << " :: [ " << i << " ] " << *mages[i] << std::endl;
+                            }
+                            continue;
+                        }
+                        if (spell_id > available_spells.size()+1) {
+                            std::cout << "Inalid option" << std::endl;
+                            continue;
+                        }
+                        Spell* curr_spell = mages[curr_id]->getSpell(spell_id); 
+
+                        std::cout << "Available targets:\n";
+                        size_t count = 0;
+                        for (size_t target_id = 0; target_id < mages.size(); target_id++) {
+                            if (mages[target_id]->getHP() <= 0) continue;
+                            if (curr_spell->canCast(mages[curr_id], mages[target_id])) {
+                                std::cout << "\t:: [ " << target_id << " ]: "
+                                          << *mages[target_id] << std::endl;
+                                count++;
+                            }
+                        }
+                        if (count == 0) {
+                            std::cout << "No available targets." << std::endl;
+                            continue;
+                        }
+                        size_t target;
+                        std::cout << "Choose target of spell cast: ";
+                        std::cin >> target;
+                        if (!std::cin) { continue; }
+                        if (target >= mages.size()) break;
+                        mages[target]->applySpells({ curr_spell });
+                        break;
+                    }
                 }
-                std::cout << "Curr mage: [" << curr_id << "] " << *mages[curr_id] << std::endl;
-
-                while (true) {
-                    size_t spell_id;
-                    std::cout << "Available spells:" << std::endl;
-                    auto available_spells =  mages[curr_id]->availableSpells();
+            } else {
+                for (size_t curr_mage = 0; curr_mage < mages.size(); curr_mage ++) {
+                    if (mages[curr_mage]->getHP() <= 0) continue;
+                    std::cout << " :: [ " << curr_mage << " ] " << *mages[curr_mage] << ": ";
+                    if (mages[curr_mage]->isSleep()) {
+                        std::cout << "sleep..." << std::endl;
+                        continue;
+                    }
+                    auto available_spells = mages[curr_mage]->availableSpells();
                     if (available_spells.size() == 0) {
-                        std::cout << "Mage has no any available spells..." << std::endl;
+                        std::cout << "can't use any spell. skip turn..." << std::endl;
                         continue;
                     }
-                    for (auto spell : available_spells) 
-                        std::cout << " :: [ " << spell << " ]: "
-                                  << *mages[curr_id]->getSpell(spell) << std::endl; 
-                    std::cout << " :: [ " << available_spells.size()   << " ]" << "skip." << std::endl;
-                    std::cout << " :: [ " << available_spells.size()+1 << " ]" << "show mages." << std::endl;
-                    std::cout << "Choose spell to cast: ";
-                    std::cin >> spell_id;
-                    if (!std::cin) continue;
-                    if (spell_id == available_spells.size()) break;
-                    if (spell_id == available_spells.size()+1) {
-                        for (size_t i = 0; i < mages.size(); i++) {
-                            std::cout << " :: [ " << i << " ] " << *mages[i] << std::endl;
-                        }
-                        continue;
-                    }
-                    if (spell_id > available_spells.size()+1) {
-                        std::cout << "Inalid option" << std::endl;
-                        continue;
-                    }
-                    Spell* curr_spell = mages[curr_id]->getSpell(spell_id); 
+                    size_t curr_spell_id = rand()%available_spells.size();
+                    size_t curr_cpell = available_spells[curr_spell_id];
+                    std::cout << "mage choose spell [ " << curr_spell_id << " ]. ";
+                    std::vector<Mage*> available_targets {};
 
-                    std::cout << "Available targets:\n";
-                    size_t count = 0;
-                    for (size_t target_id = 0; target_id < mages.size(); target_id++) {
-                        if (mages[target_id]->getHP() <= 0) continue;
-                        if (curr_spell->canCast(mages[curr_id], mages[target_id])) {
-                            std::cout << "\t:: [ " << target_id << " ]: "
-                                      << *mages[target_id] << std::endl;
-                            count++;
-                        }
+                    for (auto target : mages) {
+                        if (mages[curr_mage]->getSpell(curr_cpell)->canCast(mages[curr_mage], target))
+                            available_targets.push_back(target);
                     }
-                    if (count == 0) {
-                        std::cout << "No available targets." << std::endl;
+
+                    if (available_targets.size() == 0) {
+                        std::cout << "no avaliable targets. skip turn..." << std::endl;
                         continue;
                     }
-                    size_t target;
-                    std::cout << "Choose target of spell cast: ";
-                    std::cin >> target;
-                    if (!std::cin) { continue; }
-                    if (target >= mages.size()) break;
-                    mages[target]->applySpells({ curr_spell });
-                    break;
+                    size_t target_id = rand()%available_targets.size();
+                    auto target = available_targets[target_id];
+                    target->applySpells({ mages[curr_mage]->getSpell(curr_cpell) });
+                    std::cout << "cast spell to " << target_id << std::endl;
+
                 }
             }
 
@@ -435,9 +473,11 @@ namespace lab5 {
                 std::cout << "Orange team lose the game." << std::endl;
                 break;
             }
+            std::cout << "Next turn? ";
+            char ans;
+            std::cin >> ans;
+            if (ans != 'y' && ans != 'Y') break;
         }
-
-        for (auto mage : mages) delete mage;
     }
 
 }
