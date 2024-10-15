@@ -440,6 +440,24 @@ namespace lab6 {
 
         auto guns = rifle_range->getGuns();
         std::cout << "Current gun [ " << *curr_gun << " ]: " << guns[*curr_gun] << std::endl;
+        for (auto target : rifle_range->getTargets()) {
+            std::cout << "Current target " << target << "m away." << std::endl;
+            guns[*curr_gun]->fire(target); // fire out all bullets. 
+
+            size_t bullet_count = 100;
+            size_t hits_count = 0;
+            double time = 0.0;
+            while (bullet_count > 0) {
+                size_t mag_cap =  guns[*curr_gun]->get_mag_capacity();
+                size_t mag = mag_cap > bullet_count ? bullet_count : mag_cap;
+                bullet_count -= mag;
+                std::cout << " :: Reload gun with " << mag << " bullets." << std::endl;
+                time += guns[*curr_gun]->reaload(mag); 
+                hits_count += guns[*curr_gun]->fire(target); 
+            }
+            std::cout << " :: Takes " << time << "sec to finish." << std::endl;
+            std::cout << " :: " << hits_count << " hits to the target." << std::endl;
+        }
     }
 
     void reload(Command* self) {
