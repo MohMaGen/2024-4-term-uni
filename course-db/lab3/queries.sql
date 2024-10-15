@@ -68,23 +68,21 @@ SELECT
     SUM(p.cost_rub) * 0.8 as "sum_cost",
     AVG(p.duration_years) as "avg duration",
     AVG(a.age) as "avg age",
-    EXTRACT(YEAR FROM p.start_date) as "year",
-    p.title
+    EXTRACT(YEAR FROM p.start_date) as "year"
 FROM projects AS p
     LEFT JOIN authors AS a ON a.author_id = p.author_id
     LEFT JOIN project_types AS t ON t.project_type_id = p.project_type_id
-GROUP BY p.title, EXTRACT(YEAR FROM p.start_date)
-ORDER BY p.title ASC;
+GROUP BY EXTRACT(YEAR FROM p.start_date)
+ORDER BY EXTRACT(YEAR FROM p.start_date) ASC;
 
 
 SELECT
     SUM(p.cost_rub) * 0.8 as "sum_cost",
     AVG(p.duration_years) as "avg duration",
     AVG(a.age) as "avg age",
-    EXTRACT(YEAR FROM p.start_date) as "year",
-    p.title
+    EXTRACT(YEAR FROM p.start_date) as "year"
 FROM projects AS p
     LEFT JOIN authors AS a ON a.author_id = p.author_id
     LEFT JOIN project_types AS t ON t.project_type_id = p.project_type_id
-GROUP BY p.title, EXTRACT(YEAR FROM p.start_date)
+GROUP BY EXTRACT(YEAR FROM p.start_date)
 ORDER BY sum_cost DESC;
