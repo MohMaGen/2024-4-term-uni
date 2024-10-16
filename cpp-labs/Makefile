@@ -18,6 +18,10 @@ run-lab5-gui:
 	clang++ -o $(target)lab5-gui ./lab5/src.cpp $(flags) $(include-dirs) $(ld-flags) -DLAB5_GUI=1 -fuse-ld=mold
 	./$(target)lab5-gui
 
+lab6-gui:
+	clang++ -o $(target)lab6-gui ./lab6/src.cpp $(flags) $(include-dirs) $(ld-flags) -DLAB6_GUI=1 -fuse-ld=mold
+	./$(target)lab6-gui
+
 debug: main
 	gdb $(target)run-labs
 

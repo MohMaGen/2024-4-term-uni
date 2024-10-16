@@ -1,11 +1,11 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <exception>
 #include <functional>
 #include <iostream>
 #include <set>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 #include <string>
 
@@ -47,8 +47,9 @@ namespace lab6 {
                 };
             };
 
-            size_t get_bullets_count(void) { return _bullets_count; }
-            size_t get_mag_capacity(void) { return _mag_capacity; }
+            size_t getBulletsCount(void) { return _bullets_count; }
+            size_t getMagCapacity(void)  { return _mag_capacity; }
+            std::string getName(void)    { return _name; }
 
         protected:
             std::string _name;
@@ -229,6 +230,11 @@ namespace lab6 {
             }
             const std::set<size_t>& getTargets(void) const {
                 return _targets;
+            }
+            std::vector<size_t> getTargetsVectored(void) const {
+                std::vector<size_t> targets;
+                for (auto target: _targets) targets.push_back(target);
+                return targets;
             }
 
     };
@@ -448,7 +454,7 @@ namespace lab6 {
             size_t hits_count = 0;
             double time = 0.0;
             while (bullet_count > 0) {
-                size_t mag_cap =  guns[*curr_gun]->get_mag_capacity();
+                size_t mag_cap =  guns[*curr_gun]->getMagCapacity();
                 size_t mag = mag_cap > bullet_count ? bullet_count : mag_cap;
                 bullet_count -= mag;
                 std::cout << " :: Reload gun with " << mag << " bullets." << std::endl;
@@ -541,3 +547,332 @@ namespace lab6 {
         }
     }
 }
+namespace raylib {
+    #include <raylib.h>
+}
+
+namespace gui {
+    using Px = long;
+	struct Rect {
+        Px x, y, w, h;
+
+        Rect center(Px w_x, Px w_y, Px w_w, Px w_h) {
+            return Rect { w_x + (w_w - w) / 2, w_y + (w_h - h) / 2, w, h };
+        }
+        Rect center(Rect rect) {
+            return center(rect.x, rect.y, rect.w, rect.h);
+        }
+        Rect down(Px dy) {
+            return Rect { x, y + dy, w, h };
+        }
+        Rect right(Px dx) {
+            return Rect { x + dx, y, w, h };
+        }
+        bool inside(Px vx, Px vy) {
+            return  vx >= x && vx <= x + w && vy >= y && vy <= y + h;
+        }
+        bool inside(raylib::Vector2 v) {
+            return inside(v.x, v.y);
+        }
+
+        int justifyX(Px len, Px min_mar, Px *out_count, Px *out_mar) {
+            Px _w = w - len;
+            if (_w <= 0) {
+                *out_count = 0;
+                *out_mar = 0;
+                return 1;
+            }
+
+            *out_count = _w / (min_mar + len) + 1;
+            *out_mar = *out_count == 1 ? 0 : _w % (min_mar + len) / (*out_count-1) + min_mar;
+            return 0;
+        } 
+        int justifyY(Px len, Px min_mar, Px *out_count, Px *out_mar) {
+            Px _h = h - len;
+            if (_h <= 0) {
+                *out_count = 0;
+                *out_mar = 0;
+                return 1;
+            }
+
+            *out_count = _h / (min_mar + len) + 1;
+            *out_mar = *out_count == 1 ? 0 : _h % (min_mar + len) / (*out_count-1) + min_mar;
+            return 0; 
+        }
+	};
+
+	template<typename Type>
+	Type bound(Type value, Type lower, Type upper) {
+    	return value > upper ? upper : value < lower ? lower : value;
+	}
+
+    enum class GameState: char {
+        MainMenu,
+        Game,
+        Exit,
+    };
+    class IUiElem {
+        public:
+            virtual ~IUiElem() {}
+            virtual void draw() = 0;
+            virtual bool isDown() = 0; 
+            virtual bool isPressed() = 0;
+            virtual bool isHover() = 0; 
+    };
+
+    class Button: public IUiElem {
+        public:
+            virtual ~Button() {}
+            Rect rect;
+            Px padding;
+            std::string text;
+            Button(Rect r, Px p, const std::string& text): rect{r}, padding{p}, text{text} { }
+            Button() {}
+
+            constexpr static const raylib::Color down_bg   = { 0x55, 0x55, 0x55, 0xFF };
+            constexpr static const raylib::Color hover_bg  = { 0x88, 0x88, 0x88, 0xFF };
+            constexpr static const raylib::Color normal_bg = { 0xAA, 0xAA, 0xAA, 0xFF };
+            constexpr static const raylib::Color normal_fg = { 0x44, 0x44, 0x44, 0xFF };
+
+            virtual void draw(void) override {
+                const size_t text_size = rect.h - padding * 2;
+                const size_t text_width = raylib::MeasureText(text.c_str(), text_size); 
+                const raylib::Color color = isDown() ? down_bg : isHover() ? hover_bg : normal_bg;
+
+                raylib::DrawRectangle(rect.x, rect.y, rect.w, rect.h, color); 
+                raylib::DrawText(text.c_str(), rect.x + (rect.w - text_width) / 2., rect.y + padding, text_size, normal_fg); 
+            }
+
+            virtual bool isHover(void) override {
+                auto mouse = raylib::GetMousePosition();
+                return rect.inside(mouse); 
+            }
+
+            virtual bool isDown(void) override {
+                return isHover() && raylib::IsMouseButtonDown(raylib::MOUSE_BUTTON_LEFT);
+            }
+
+            virtual bool isPressed(void) override {
+                return isHover() && raylib::IsMouseButtonPressed(raylib::MOUSE_BUTTON_LEFT);
+            }
+    };
+
+    struct GameEnv {
+        GameState curr_state = GameState::MainMenu;
+    };
+
+
+    template <class UiElem>
+    class Hideble: public IUiElem {
+        bool _is_hide = false;
+        public:
+            UiElem elem;
+            Hideble<UiElem>(const UiElem &elem): elem(elem) { } 
+            Hideble<UiElem>(): elem{} {} 
+
+            void hide()      { _is_hide = true; }
+            void reveal()    { _is_hide = false; }
+            virtual void draw()      override { if (!_is_hide) elem.draw(); }
+            virtual bool isDown()    override { return _is_hide ? false : elem.isDown(); }
+            virtual bool isPressed() override { return _is_hide ? false : elem.isPressed(); }
+            virtual bool isHover()   override { return _is_hide ? false : elem.isHover(); }
+    };
+
+    class MainMenu {
+        constexpr static const Px BUTTON_WIDTH   = 800;
+        constexpr static const Px BUTTON_HEIGHT  = 120;
+        constexpr static const Px BUTTON_PADDING = 20;
+        constexpr static const Px BUTTON_MARGIN  = 60;
+
+        Button _start_game { { .x=0, .y=0, .w=BUTTON_WIDTH, .h=BUTTON_HEIGHT }, BUTTON_PADDING, "START GAME" };
+        Button _exit       { { .x=0, .y=0, .w=BUTTON_WIDTH, .h=BUTTON_HEIGHT }, BUTTON_PADDING, "EXIT" };
+        GameEnv &_env;
+        public:
+            MainMenu(GameEnv &env): _env(env) { }
+            void update() {
+                Px w_w = raylib::GetScreenWidth();
+                Px w_h = raylib::GetScreenHeight();
+
+                _start_game.rect = _start_game.rect.center(0, 0, w_w, w_h).down(-BUTTON_MARGIN - _start_game.rect.h / 2);
+                _exit.rect       = _start_game.rect.center(0, 0, w_w, w_h).down(+BUTTON_MARGIN + _start_game.rect.h / 2);
+
+                if (_start_game.isPressed()) _env.curr_state = GameState::Game;
+                if (_exit.isPressed()) _env.curr_state = GameState::Exit;
+
+                raylib::BeginDrawing();
+                    raylib::ClearBackground({ 0xFF, 0xFF, 0xFF, 0xFF }); 
+                    _start_game.draw();
+                    _exit.draw();
+                raylib::EndDrawing();
+            }
+    };
+
+
+    class Game {
+        Button _exit_button { { .x=10, .y=10, .w=100, .h=40 }, 5, "EXIT" };
+        GameEnv &_env;
+        lab6::RifleRange _rifle_range {};
+
+
+        constexpr static const Px BUTTON_WIDTH       = 250;
+        constexpr static const Px BUTTON_HEIGHT      = 80;
+        constexpr static const Px BUTTON_PADDING     = 30;
+        constexpr static const Px BUTTON_MARGIN      = 20;
+
+        Px _guns_scroll = 0;
+        Px _targets_scroll = 0;
+
+
+        std::vector<Hideble<Button>> _guns_buttons;
+        std::vector<Hideble<Button>> _targets_buttons;
+
+        Rect _guns_block    = { 10, 200, BUTTON_WIDTH, -1 };
+        Rect _targets_block = { 10 + BUTTON_WIDTH + 20, 200, BUTTON_WIDTH - 100, -1 };
+
+        Hideble<Button> _scroll_down_gun, _scroll_up_gun, _new_gun;
+        Hideble<Button> _scroll_down_target, _scroll_up_target, _new_target;
+
+        void _update_buttons() {
+            auto guns = _rifle_range.getGuns();
+            if (guns.size() > _guns_buttons.size())
+                for (size_t i = 0; i <  guns.size() - _guns_buttons.size(); i++) _guns_buttons.push_back({});
+            else
+                for (size_t i = 0; i <  _guns_buttons.size() - guns.size(); i++) _guns_buttons.pop_back();
+
+            auto targets = _rifle_range.getTargetsVectored();
+            if (targets.size() > _targets_buttons.size()) 
+                for (size_t i = 0; i <  targets.size() - _targets_buttons.size(); i++) _targets_buttons.push_back({});
+            else 
+                for (size_t i = 0; i <  _targets_buttons.size() - targets.size(); i++) _targets_buttons.pop_back();
+
+            Px w_h = raylib::GetScreenHeight();
+            auto mouse_pos = raylib::GetMousePosition();
+            _guns_block.h = w_h - _guns_block.y * 2;
+            _targets_block.h = w_h - _targets_block.y * 2;
+
+            if (_guns_block.inside(mouse_pos))    _guns_scroll -= raylib::GetMouseWheelMove();
+            if (_targets_block.inside(mouse_pos)) _targets_scroll -= raylib::GetMouseWheelMove();
+
+            _scroll_up_gun.reveal();    _scroll_down_gun.reveal();
+            _scroll_up_target.reveal(); _scroll_down_target.reveal();
+
+            _scroll_down_gun.elem.rect    = { _guns_block.x + (_guns_block.w - 50)/2, _guns_block.y + _guns_block.h + 10, 50, 50 };
+            _scroll_up_gun.elem.rect      = { _guns_block.x + (_guns_block.w - 50)/2, _guns_block.y - 10 - 50, 50, 50 };
+            _scroll_down_target.elem.rect = { _targets_block.x + (_targets_block.w - 50)/2, _targets_block.y + _targets_block.h + 10, 50, 50 };
+            _scroll_up_target.elem.rect   = { _targets_block.x + (_targets_block.w - 50)/2, _targets_block.y - 10 - 50, 50, 50 };
+
+            if (_scroll_down_gun.isPressed()) _guns_scroll++; 
+            if (_scroll_up_gun.isPressed())   _guns_scroll--; 
+
+            if (_scroll_down_target.isPressed()) _targets_scroll++; 
+            if (_scroll_up_target.isPressed())   _targets_scroll--; 
+
+            Px count, mar;
+            _guns_block.justifyY(BUTTON_HEIGHT, BUTTON_MARGIN, &count, &mar); 
+            _guns_scroll    = bound<Px>(_guns_scroll, 0, guns.size() - count);
+            if (count == 0) { _scroll_up_gun.hide(); _scroll_down_gun.hide(); }
+            for (size_t i = 0; i < _guns_buttons.size(); i++) {
+                long column_id = (long)i - _guns_scroll;
+                if (column_id < 0) { 
+                    _guns_buttons[i].hide();
+                    continue;
+                }
+                if (column_id >= count) {
+                    _guns_buttons[i].hide();
+                    continue;
+                }
+                _guns_buttons[i].reveal();
+
+                Rect rect = {
+                	.x = _guns_block.x,
+                	.y = _guns_block.y + column_id * (BUTTON_HEIGHT + mar),
+                	.w = _guns_block.w,
+                	.h = BUTTON_HEIGHT,
+                };
+                rect = count == 1 ? rect.center(_guns_block) : rect;
+
+                _guns_buttons[i] = Hideble<Button>({rect, BUTTON_PADDING, guns[i]->getName() });
+            }
+
+            _targets_block.justifyY(BUTTON_HEIGHT, BUTTON_MARGIN, &count, &mar);
+            _targets_scroll = bound<Px>(_targets_scroll, 0, targets.size() - count);
+            if (count == 0) {
+                _scroll_up_target.hide(); _scroll_down_target.hide();
+            }
+            for (size_t i = 0; i < _targets_buttons.size(); i++) {
+                long column_id = (long)i - _targets_scroll;
+                if (column_id < 0) { 
+                    _targets_buttons[i].hide();
+                    continue;
+                }
+                if (column_id >= count) {
+                    _targets_buttons[i].hide();
+                    continue;
+                }
+                _targets_buttons[i].reveal();
+
+                Rect rect = {
+                	.x = _targets_block.x,
+                	.y = _targets_block.y + column_id * (BUTTON_HEIGHT + mar),
+                	.w = _targets_block.w,
+                	.h = BUTTON_HEIGHT,
+                };
+                rect = count == 1 ? rect.center(_targets_block) : rect;
+
+                _targets_buttons[i] = Hideble<Button>({rect, BUTTON_PADDING, std::to_string(targets[i]) });
+            }
+        }
+
+        public:
+            Game(GameEnv &env): _env(env) { 
+                _scroll_down_gun    = Hideble<Button> ({ { -1, -1, 50, 50 }, 10, "\\/", });
+                _scroll_up_gun      = Hideble<Button> ({ { -1, -1, 50, 50 }, 10, "/\\", });
+                _scroll_down_target = Hideble<Button> ({ { -1, -1, 50, 50 }, 10, "\\/", });
+                _scroll_up_target   = Hideble<Button> ({ { -1, -1, 50, 50 }, 10, "/\\", });
+            }
+            ~Game() { }
+
+            void update() {
+                if (_exit_button.isPressed()) _env.curr_state = GameState::MainMenu;
+                _update_buttons();
+
+
+                raylib::BeginDrawing();
+                    raylib::ClearBackground({ 0xFF, 0xFF, 0xFF, 0xFF }); 
+
+                    _exit_button.draw();
+
+                    for (auto gun_b : _guns_buttons)       gun_b.draw();
+                    for (auto target_b : _targets_buttons) target_b.draw();
+
+                    _scroll_up_gun.draw(); _scroll_down_gun.draw();
+                    _scroll_up_target.draw(); _scroll_down_target.draw();
+
+                raylib::EndDrawing();
+            }
+    };
+
+    void runGame(void) {
+        raylib::InitWindow(400, 300, "Lab7 game"); 
+        raylib::SetWindowState(raylib::FLAG_WINDOW_RESIZABLE); 
+
+        GameEnv env { };
+        MainMenu main_menu { env };
+        Game game { env };
+
+        while (!raylib::WindowShouldClose() && env.curr_state != GameState::Exit) {
+            switch (env.curr_state) {
+            case GameState::MainMenu: main_menu.update(); break;
+            case GameState::Game: game.update(); break;
+            case GameState::Exit: break;
+            }
+        }
+        raylib::CloseWindow();
+    }
+
+}
+#ifdef LAB6_GUI
+int main(void) {
+    gui::runGame();
+}
+#endif

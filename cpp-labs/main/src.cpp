@@ -9,6 +9,7 @@
 #include <lab4.hpp>
 #include <lab5.hpp>
 #include <lab6.hpp>
+#include <lab7.hpp>
 
 const char HELP_MESSAGE[] =
     "\t\t _       _                                                \n"
@@ -25,6 +26,7 @@ const char HELP_MESSAGE[] =
     "\tlab4 <zoo_len>   -- for lab4 process.\n"
     "\tlab5             -- for lab5 process.\n"
     "\tlab6             -- for lab6 process.\n"
+    "\tlab7             -- for lab7 process.\n"
     "\tquit -- to quit from lab runner.";
 
 void runFirstLab(void) {
@@ -65,8 +67,10 @@ auto main(void) -> int {
             lab4::runLab4();
         } else if (command == "lab5") {
             lab5::runLab5();
-        } else if (command == "lab6"){
+        } else if (command == "lab6") {
             lab6::runLab6();
+        } else if (command == "lab7") { 
+            lab7::runLab7();
         } else if (command == "help") {
             std::cout << HELP_MESSAGE << std::endl;
         } else if (command == "quit") {
