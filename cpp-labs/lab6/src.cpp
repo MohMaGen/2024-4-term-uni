@@ -3,9 +3,9 @@
 #include <cstdlib>
 #include <functional>
 #include <iostream>
+#include <numeric>
 #include <set>
 #include <stdexcept>
-#include <type_traits>
 #include <vector>
 #include <string>
 
@@ -618,6 +618,37 @@ namespace gui {
             virtual bool isDown() = 0; 
             virtual bool isPressed() = 0;
             virtual bool isHover() = 0; 
+            virtual Rect updateElem(Rect context, double deltaTime) = 0;
+            virtual Rect updateElem(Rect context) = 0;
+    };
+
+    class RectUi: public IUiElem {
+        public:
+            Rect rect { };
+            raylib::Color bg_color { 0x88, 0x88, 0x88, 0xFF };
+
+            RectUi() {}
+            RectUi(Rect rect): rect(rect) { }
+            RectUi(Rect rect, raylib::Color bg_color): rect(rect), bg_color(bg_color)  { }
+
+            virtual void draw(void) override {
+                raylib::DrawRectangle(rect.x, rect.y, rect.w, rect.h, bg_color); 
+            }
+
+            virtual bool isHover(void) override {
+                auto mouse = raylib::GetMousePosition();
+                return rect.inside(mouse); 
+            }
+
+            virtual bool isDown(void) override {
+                return isHover() && raylib::IsMouseButtonDown(raylib::MOUSE_BUTTON_LEFT);
+            }
+
+            virtual bool isPressed(void) override {
+                return isHover() && raylib::IsMouseButtonPressed(raylib::MOUSE_BUTTON_LEFT);
+            }
+            virtual Rect updateElem(Rect context, double deltaTime) override { rect = rect.center(context); return rect; }
+            virtual Rect updateElem(Rect context) override { rect = rect.center(context); return rect; };
     };
 
     class Button: public IUiElem {
@@ -639,22 +670,23 @@ namespace gui {
                 const size_t text_width = raylib::MeasureText(text.c_str(), text_size); 
                 const raylib::Color color = isDown() ? down_bg : isHover() ? hover_bg : normal_bg;
 
-                raylib::DrawRectangle(rect.x, rect.y, rect.w, rect.h, color); 
+                RectUi(rect, color).draw();
                 raylib::DrawText(text.c_str(), rect.x + (rect.w - text_width) / 2., rect.y + padding, text_size, normal_fg); 
             }
 
             virtual bool isHover(void) override {
-                auto mouse = raylib::GetMousePosition();
-                return rect.inside(mouse); 
+                return RectUi(rect).isHover();
             }
 
             virtual bool isDown(void) override {
-                return isHover() && raylib::IsMouseButtonDown(raylib::MOUSE_BUTTON_LEFT);
+                return RectUi(rect).isDown();
             }
 
             virtual bool isPressed(void) override {
-                return isHover() && raylib::IsMouseButtonPressed(raylib::MOUSE_BUTTON_LEFT);
+                return RectUi(rect).isPressed();
             }
+            virtual Rect updateElem(Rect context, double delta_time) override { rect = rect.center(context); return rect; }
+            virtual Rect updateElem(Rect context) override { rect = rect.center(context); return rect; };
     };
 
     struct GameEnv {
@@ -676,7 +708,128 @@ namespace gui {
             virtual bool isDown()    override { return _is_hide ? false : elem.isDown(); }
             virtual bool isPressed() override { return _is_hide ? false : elem.isPressed(); }
             virtual bool isHover()   override { return _is_hide ? false : elem.isHover(); }
+
+            virtual Rect updateElem(Rect context, double delta_ime) override {
+                if (!_is_hide) return elem.updateElem(context, delta_ime); 
+                return { };
+            }
+            virtual Rect updateElem(Rect context) override {
+                if (!_is_hide) return elem.updateElem(context);
+                return { };
+            };
     };
+    enum class Direction: char {
+        Horisontal, Vertical
+    };
+    template<typename UiElem>
+    class ScrollBlock: public IUiElem {
+        Hideble<Button> _scroll_down_button, _scroll_up_button;
+        Px _scroll = 0;
+        public:
+            Rect rect;
+            std::vector<Hideble<UiElem>> elems;
+            Px margin;
+            Direction  direction;
+
+            ScrollBlock<UiElem>(const std::vector<UiElem> &_elems, Rect rect, Px margin, Direction dir): 
+                rect(rect), elems{_elems.size()}, margin(margin), direction(dir) {
+                for (size_t i = 0; i < _elems.size(); i++) {
+                    elems[i] = _elems[i];
+                }
+            }
+
+            virtual void draw() override {
+                for (auto elem : elems) elem.draw();
+                _scroll_down_button.draw();
+                _scroll_up_button.draw();
+            };
+            virtual bool isDown() override {
+                return RectUi(rect).isDown();
+            }; 
+            virtual bool isPressed() override {
+                return RectUi(rect).isPressed();
+            }
+            virtual bool isHover() override {
+                return RectUi(rect).isHover();
+            } 
+            virtual Rect updateElem(Rect context, double delta_time) override {
+                return updateElem(context);
+            }
+            virtual Rect updateElem(Rect context) override { 
+                rect.center(context);
+                if (elems.size() == 0) return rect;
+                _scroll_up_button.elem = { {rect.x + (rect.w - 50) / 2, rect.y, 50, 50}, 10, "/\\" }; 
+                _scroll_down_button.elem = { {rect.x + (rect.w - 50) / 2, rect.y + rect.h - 50, 50, 50}, 10, "\\/" }; 
+
+
+
+                if (_scroll_down_button.isPressed()) _scroll++;
+                if (_scroll_up_button.isPressed()) _scroll--;
+                if (isHover()) _scroll -= raylib::GetMouseWheelMove();
+
+                Rect inner_rect = rect; 
+                if (direction == Direction::Vertical) {
+                    inner_rect.y += 60;
+                    inner_rect.h -= 120;
+                } else {
+                    inner_rect.x += 60;
+                    inner_rect.w -= 120;
+                }
+
+                Px count, mar;
+                const Direction dir = direction;
+                const Px len = std::accumulate(elems.begin(), elems.end(), Px{0}, [dir](Px acc, auto elem) {
+                        elem.reveal();
+                        Rect rect = elem.updateElem({ });
+                        if (dir == Direction::Vertical) {
+                            return rect.h + acc;
+                        } else {
+                            return rect.w + acc;
+                        }
+                    }) / Px(elems.size());
+                inner_rect.justifyY(len, margin, &count, &mar); 
+                _scroll = bound<Px>(_scroll, 0, elems.size() - count);
+
+
+                if (count == 0) {
+                    _scroll_up_button.hide(); 
+                    _scroll_down_button.hide();
+                } else {
+                    _scroll_up_button.reveal(); 
+                    _scroll_down_button.reveal();
+                }
+
+
+
+                Px curret = 0;
+                for (size_t i = 0; i < elems.size(); i++) {
+                    long column_id = (long)i - _scroll;
+                    if (column_id < 0) { 
+                        elems[i].hide();
+                        continue;
+                    }
+                    if (column_id >= count) {
+                        elems[i].hide();
+                        continue;
+                    }
+                    elems[i].reveal();
+
+                    Rect elem_rect = elems[i].updateElem({ }).center(inner_rect);
+                    if (dir == Direction::Vertical) {
+                        elem_rect.y = inner_rect.y + curret;
+                        curret += mar + elem_rect.h;
+                    } else {
+                        elem_rect.x = inner_rect.x + curret;
+                        curret += mar + elem_rect.w;
+                    }
+                    elem_rect = count == 1 ? elem_rect.center(elem_rect) : elem_rect;
+                    elems[i].updateElem(elem_rect);
+                }
+                return rect;
+            }
+    };
+
+
 
     class MainMenu {
         constexpr static const Px BUTTON_WIDTH   = 800;
@@ -693,8 +846,9 @@ namespace gui {
                 Px w_w = raylib::GetScreenWidth();
                 Px w_h = raylib::GetScreenHeight();
 
-                _start_game.rect = _start_game.rect.center(0, 0, w_w, w_h).down(-BUTTON_MARGIN - _start_game.rect.h / 2);
-                _exit.rect       = _start_game.rect.center(0, 0, w_w, w_h).down(+BUTTON_MARGIN + _start_game.rect.h / 2);
+
+                _start_game.updateElem(Rect(0, 0, w_w, w_h).down(-BUTTON_MARGIN - _start_game.rect.h / 2));
+                _exit.updateElem(Rect(0, 0, w_w, w_h).down(+BUTTON_MARGIN + _start_game.rect.h / 2));
 
                 if (_start_game.isPressed()) _env.curr_state = GameState::Game;
                 if (_exit.isPressed()) _env.curr_state = GameState::Exit;
@@ -707,7 +861,6 @@ namespace gui {
             }
     };
 
-
     class Game {
         Button _exit_button { { .x=10, .y=10, .w=100, .h=40 }, 5, "EXIT" };
         GameEnv &_env;
@@ -719,135 +872,54 @@ namespace gui {
         constexpr static const Px BUTTON_PADDING     = 30;
         constexpr static const Px BUTTON_MARGIN      = 20;
 
-        Px _guns_scroll = 0;
-        Px _targets_scroll = 0;
+        ScrollBlock<Button> _guns_choose;
+        ScrollBlock<Button> _targets_choose;
 
 
-        std::vector<Hideble<Button>> _guns_buttons;
-        std::vector<Hideble<Button>> _targets_buttons;
-
-        Rect _guns_block    = { 10, 200, BUTTON_WIDTH, -1 };
-        Rect _targets_block = { 10 + BUTTON_WIDTH + 20, 200, BUTTON_WIDTH - 100, -1 };
-
-        Hideble<Button> _scroll_down_gun, _scroll_up_gun, _new_gun;
-        Hideble<Button> _scroll_down_target, _scroll_up_target, _new_target;
-
-        void _update_buttons() {
-            auto guns = _rifle_range.getGuns();
-            if (guns.size() > _guns_buttons.size())
-                for (size_t i = 0; i <  guns.size() - _guns_buttons.size(); i++) _guns_buttons.push_back({});
-            else
-                for (size_t i = 0; i <  _guns_buttons.size() - guns.size(); i++) _guns_buttons.pop_back();
-
-            auto targets = _rifle_range.getTargetsVectored();
-            if (targets.size() > _targets_buttons.size()) 
-                for (size_t i = 0; i <  targets.size() - _targets_buttons.size(); i++) _targets_buttons.push_back({});
-            else 
-                for (size_t i = 0; i <  _targets_buttons.size() - targets.size(); i++) _targets_buttons.pop_back();
-
-            Px w_h = raylib::GetScreenHeight();
-            auto mouse_pos = raylib::GetMousePosition();
-            _guns_block.h = w_h - _guns_block.y * 2;
-            _targets_block.h = w_h - _targets_block.y * 2;
-
-            if (_guns_block.inside(mouse_pos))    _guns_scroll -= raylib::GetMouseWheelMove();
-            if (_targets_block.inside(mouse_pos)) _targets_scroll -= raylib::GetMouseWheelMove();
-
-            _scroll_up_gun.reveal();    _scroll_down_gun.reveal();
-            _scroll_up_target.reveal(); _scroll_down_target.reveal();
-
-            _scroll_down_gun.elem.rect    = { _guns_block.x + (_guns_block.w - 50)/2, _guns_block.y + _guns_block.h + 10, 50, 50 };
-            _scroll_up_gun.elem.rect      = { _guns_block.x + (_guns_block.w - 50)/2, _guns_block.y - 10 - 50, 50, 50 };
-            _scroll_down_target.elem.rect = { _targets_block.x + (_targets_block.w - 50)/2, _targets_block.y + _targets_block.h + 10, 50, 50 };
-            _scroll_up_target.elem.rect   = { _targets_block.x + (_targets_block.w - 50)/2, _targets_block.y - 10 - 50, 50, 50 };
-
-            if (_scroll_down_gun.isPressed()) _guns_scroll++; 
-            if (_scroll_up_gun.isPressed())   _guns_scroll--; 
-
-            if (_scroll_down_target.isPressed()) _targets_scroll++; 
-            if (_scroll_up_target.isPressed())   _targets_scroll--; 
-
-            Px count, mar;
-            _guns_block.justifyY(BUTTON_HEIGHT, BUTTON_MARGIN, &count, &mar); 
-            _guns_scroll    = bound<Px>(_guns_scroll, 0, guns.size() - count);
-            if (count == 0) { _scroll_up_gun.hide(); _scroll_down_gun.hide(); }
-            for (size_t i = 0; i < _guns_buttons.size(); i++) {
-                long column_id = (long)i - _guns_scroll;
-                if (column_id < 0) { 
-                    _guns_buttons[i].hide();
-                    continue;
-                }
-                if (column_id >= count) {
-                    _guns_buttons[i].hide();
-                    continue;
-                }
-                _guns_buttons[i].reveal();
-
-                Rect rect = {
-                	.x = _guns_block.x,
-                	.y = _guns_block.y + column_id * (BUTTON_HEIGHT + mar),
-                	.w = _guns_block.w,
-                	.h = BUTTON_HEIGHT,
-                };
-                rect = count == 1 ? rect.center(_guns_block) : rect;
-
-                _guns_buttons[i] = Hideble<Button>({rect, BUTTON_PADDING, guns[i]->getName() });
-            }
-
-            _targets_block.justifyY(BUTTON_HEIGHT, BUTTON_MARGIN, &count, &mar);
-            _targets_scroll = bound<Px>(_targets_scroll, 0, targets.size() - count);
-            if (count == 0) {
-                _scroll_up_target.hide(); _scroll_down_target.hide();
-            }
-            for (size_t i = 0; i < _targets_buttons.size(); i++) {
-                long column_id = (long)i - _targets_scroll;
-                if (column_id < 0) { 
-                    _targets_buttons[i].hide();
-                    continue;
-                }
-                if (column_id >= count) {
-                    _targets_buttons[i].hide();
-                    continue;
-                }
-                _targets_buttons[i].reveal();
-
-                Rect rect = {
-                	.x = _targets_block.x,
-                	.y = _targets_block.y + column_id * (BUTTON_HEIGHT + mar),
-                	.w = _targets_block.w,
-                	.h = BUTTON_HEIGHT,
-                };
-                rect = count == 1 ? rect.center(_targets_block) : rect;
-
-                _targets_buttons[i] = Hideble<Button>({rect, BUTTON_PADDING, std::to_string(targets[i]) });
-            }
-        }
+        void _update_buttons() { }
 
         public:
-            Game(GameEnv &env): _env(env) { 
-                _scroll_down_gun    = Hideble<Button> ({ { -1, -1, 50, 50 }, 10, "\\/", });
-                _scroll_up_gun      = Hideble<Button> ({ { -1, -1, 50, 50 }, 10, "/\\", });
-                _scroll_down_target = Hideble<Button> ({ { -1, -1, 50, 50 }, 10, "\\/", });
-                _scroll_up_target   = Hideble<Button> ({ { -1, -1, 50, 50 }, 10, "/\\", });
-            }
+            Game(GameEnv &env): 
+                _env(env),
+                _guns_choose({ }, { 20, 200, BUTTON_WIDTH, -1 }, 30, Direction::Vertical), 
+                _targets_choose({ }, { 20 + BUTTON_WIDTH + 20, 200, BUTTON_WIDTH, -1 }, 30, Direction::Vertical)
+                { }
             ~Game() { }
 
             void update() {
+                Px w_h = raylib::GetScreenHeight();
+
+                auto guns = _rifle_range.getGuns();
+                auto targets = _rifle_range.getTargetsVectored();
+
+                std::vector<Hideble<Button>> guns_buttons { guns.size() }, targets_buttons { targets.size() };
+
+                for (size_t i = 0; i < guns.size(); i++) {
+                    guns_buttons[i] = Hideble<Button>({ {0, 0, BUTTON_WIDTH, BUTTON_HEIGHT}, 30, guns[i]->getName()});
+                }
+                for (size_t i = 0; i < targets.size(); i++) {
+                    targets_buttons[i] = Hideble<Button>({ {0, 0, BUTTON_WIDTH-100, BUTTON_HEIGHT}, 30, std::to_string(targets[i]) + "m"});
+                }
+
+                _guns_choose.elems = guns_buttons;
+                _targets_choose.elems = targets_buttons;
+
+
                 if (_exit_button.isPressed()) _env.curr_state = GameState::MainMenu;
                 _update_buttons();
+
+                _guns_choose.rect    = { 20, 200, BUTTON_WIDTH, w_h - 250 };
+                _targets_choose.rect = { 20 + BUTTON_WIDTH + 20, 200, BUTTON_WIDTH - 100, w_h - 250 };
+
+                _guns_choose.updateElem(_guns_choose.rect);
+                _targets_choose.updateElem(_targets_choose.rect);
 
 
                 raylib::BeginDrawing();
                     raylib::ClearBackground({ 0xFF, 0xFF, 0xFF, 0xFF }); 
-
                     _exit_button.draw();
-
-                    for (auto gun_b : _guns_buttons)       gun_b.draw();
-                    for (auto target_b : _targets_buttons) target_b.draw();
-
-                    _scroll_up_gun.draw(); _scroll_down_gun.draw();
-                    _scroll_up_target.draw(); _scroll_down_target.draw();
-
+                    _guns_choose.draw();
+                    _targets_choose.draw();
                 raylib::EndDrawing();
             }
     };

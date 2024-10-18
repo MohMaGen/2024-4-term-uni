@@ -15,11 +15,8 @@ class Queue {
         void push(Type value) {
             if (_en >= _cp) {
                 ++_cp *= 2;
-                Type *data = (Type*)std::malloc(sizeof(Type) * _cp);
-                for (size_t i = _st; i < _en; i++) data[i - _st] = _data[i];
-                delete _data;
-                _data = data;
-            }
+                _data = (Type*)std::realloc(_data, sizeof(Type) * _cp);
+           }
             _data[_en++] = value; 
         }
 
