@@ -112,6 +112,8 @@ struct Str {
     Str& operator=(Str&& s) {
         data = s.data;
         len = s.len;
+        s.data = nullptr;
+        s.len = 0;
         return *this;
     }
 
