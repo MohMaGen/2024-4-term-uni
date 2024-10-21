@@ -875,6 +875,7 @@ namespace gui {
         ScrollBlock<Button> _guns_choose;
         ScrollBlock<Button> _targets_choose;
 
+        size_t _curr_gun = 0, _curr_target = 0;
 
         void _update_buttons() { }
 
