@@ -881,8 +881,8 @@ namespace gui {
         public:
             Game(GameEnv &env): 
                 _env(env),
-                _guns_choose({ }, { 20, 200, BUTTON_WIDTH, -1 }, 30, Direction::Vertical), 
-                _targets_choose({ }, { 20 + BUTTON_WIDTH + 20, 200, BUTTON_WIDTH, -1 }, 30, Direction::Vertical)
+                _guns_choose({ }, { 20, 200, BUTTON_WIDTH, -1 }, 15, Direction::Vertical), 
+                _targets_choose({ }, { 20 + BUTTON_WIDTH + 20, 200, BUTTON_WIDTH, -1 }, 15, Direction::Vertical)
                 { }
             ~Game() { }
 
