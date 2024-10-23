@@ -47,7 +47,7 @@
 #figure(
     kind: table,
     tablex(
-        columns: (auto, auot),
+        columns: (auto, auto),
         colspanx(2, [*Оконные функции*]),
         [1.], [Придумать запрос на применение агрегирующих оконных функций],
         [2.], [Придумать запрос на применение ранжирующих оконных функций.],
@@ -66,3 +66,21 @@
         [12], [Придумать запрос на сравнение таблицы с собой],
     )
 )
+
+= Решение
+== Запрос на применение агрегирующих оконных функций
+- Средняя стоимость проектов разделённых по типам.
+- SQL запрос:
+    ```sql
+    SELECT
+        p.title AS "Title",
+        t.type_name AS "Type",
+        p.cost_rub AS "Cost",
+        AVG(p.cost_rub) OVER( PARTITION BY p.project_type_id ) AS "AVG"
+    FROM projects AS p
+    LEFT JOIN project_types AS t 
+        ON t.project_type_id = p.project_type_id;
+    ```
+- Результат.
+
+
