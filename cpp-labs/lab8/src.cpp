@@ -7,6 +7,7 @@
 #include <iostream>
 #include <lab7.hpp>
 #include <mutex>
+#include <ostream>
 #include <stdexcept>
 #include <thread>
 #include <vector>
@@ -21,8 +22,9 @@ namespace lab8 {
         enum { Just=0, Nothing } variant;
         union { Type just; bool _; };
 
-        Maybe(): variant(Nothing), _(false) {}
-        Maybe(Type value): variant(Just), just(value) {}
+        Maybe<Type>(): variant(Nothing), _(false) {}
+        Maybe<Type>(Type value): variant(Just), just(value) {}
+
 
         constexpr bool hasSome() const noexcept { return variant != Nothing; }
         explicit operator bool() { return hasSome(); }
@@ -77,18 +79,29 @@ namespace lab8 {
         return os << " " << customer.time_to_serve << "min";
     }
 
+    std::ostream& operator<<(std::ostream& os, Maybe<Customer> customer) {
+        return customer ? os << "Just `" << *customer << "`" : os << "Nothing";
+    }
+
     class Window {
         Maybe<Customer> _customer;
-        size_t serving_time = 0;
+        size_t _serving_time = 0;
         public:
             void tick(void) {
                 if (!_customer) return;
+                _serving_time++;
+            }
 
-                serving_time++;
-                if (serving_time >= _customer->time_to_serve) {
+            int update() {
+                if (!_customer) return 0;
+
+                if (_serving_time >= _customer->time_to_serve) {
                     _customer = { };
-                    serving_time = 0;
+                    _serving_time = 0;
+                    return 1;
                 }
+
+                return 0;
             }
 
             const Maybe<Customer>& getCustomer(void) const noexcept {
@@ -98,16 +111,17 @@ namespace lab8 {
             bool hasCustomer(void) const noexcept {
                 return _customer.hasSome();
             }
+
+            void setCustomer(Customer customer) noexcept {
+                _customer = {  customer };
+                _serving_time = 0;
+            }
+
+
         friend std::ostream& operator<<(std::ostream& os, const Window &window);
     };
     std::ostream& operator<<(std::ostream& os, const Window &window) {
-        os << "Window `" << window.serving_time << "` ";
-
-        if (window._customer.hasSome()) {
-            os << "customer: `" << *window._customer << "`";
-        } else {
-            os << "no customer";
-        }
+        os << "Window `" << window._serving_time << "min` " << window._customer;
 
         return os;
     }
@@ -118,77 +132,118 @@ namespace lab8 {
 
         size_t _inst_time = 0;
         size_t _time_to_next_cutomer_wave = 0;
+        size_t _served_customers = 0;
+        size_t _customers_count  = 0;
 
         void _new_customers() {
+            std::cout << "  - New customers:";
+
             for (size_t i = 0; i < 3; i++) {
                 auto customer = Customer::Generate();
-                if (!customer) continue;
+                if (!customer.hasSome()) continue;
 
+                _customers_count++;
 
                 double chance = (double)std::rand() / (double)RAND_MAX;
 
                 switch (customer->type) {
                 case Customer::Junior: {
+                    std::cout << " Junior";
+
                     if (chance <= 0.2)
                         _e_queue.push(*customer); 
                     else 
                         _l_queue.push(*customer);
                 } break;
                 case Customer::Middle: {
+                    std::cout << " Middle";
+
                     if (chance <= 0.7)
                         _e_queue.push(*customer); 
                     else 
                         _l_queue.push(*customer);
                 } break;
                 case Customer::Senior: {
+                    std::cout << " Senior";
+
                     if (chance <= 0.05)
                         _e_queue.push(*customer); 
                     else 
                         _l_queue.push(*customer);
                 } break;
+                default:
+                    std::cout << "BI";
                 }
             }
-
+            std::cout << std::endl;
         }
 
         void _update() {
+            std::cout << "UPDATE:" << std::endl;
+
             if (_time_to_next_cutomer_wave == 0) {
                 _new_customers();
                 _time_to_next_cutomer_wave = 5;
             }
+
+            for (auto &window: _windows) {
+                _served_customers += window.update();
+                if (window.hasCustomer()) continue;
+
+                if (_e_queue.len() > 0) {
+                    window.setCustomer(_e_queue.shift());  
+                } else if (_l_queue.len() > 0) {
+                    window.setCustomer(_l_queue.shift());  
+                }
+            }
         }
 
-
         void _display() {
-            std::cout << "E queue:";
+            std::cout << "DISPLAY:" << std::endl;
+            std::cout << "  - E queue:";
             for (auto customer : _e_queue) {
                 std::cout << " " << customer;
             }
             std::cout << std::endl;
 
-            std::cout << "Live queue:";
+            std::cout << "  - Live queue:";
             for (auto customer : _l_queue) {
                 std::cout << " " << customer;
             }
             std::cout << std::endl;
+
+            std::cout << "  - Windows:" << std::endl;;
+            for (auto window: _windows) {
+                std::cout << "   - " << window << std::endl;
+            }
+            std::cout << std::endl;
         }
 
-
         public:
-            Institution() { }
-            Institution(size_t windows_count): _windows(windows_count)  { } 
+            Institution(size_t windows_count): _windows(windows_count)  { 
+                _update();
+                _display();
+            } 
 
             const std::vector<Window>& getWindows(void) const noexcept {
                 return _windows;
             }
 
-            const lab7::Queue<Customer> getLiveQueue(void) const noexcept {
+            const lab7::Queue<Customer>&  getLiveQueue(void) const noexcept {
                 return _l_queue;
             } 
 
-            const lab7::Queue<Customer> getEQueue(void) const noexcept {
+            const lab7::Queue<Customer>& getEQueue(void) const noexcept {
                 return _e_queue;
             } 
+
+            struct Stats {
+                size_t customers_count;
+                size_t served_customers;
+            };
+            Stats getStats(void) const noexcept {
+                return Stats { _customers_count, _served_customers };
+            }
 
             void tick() {
                 _update();
@@ -197,6 +252,7 @@ namespace lab8 {
 
                 _time_to_next_cutomer_wave--;
                 _inst_time++;
+                for (auto& window: _windows) window.tick();
             }
     };
 
@@ -208,6 +264,7 @@ namespace lab8 {
         GET_E_QUEUE=0,
         GET_L_QUEUE,
         GET_WINDOWS,
+        GET_STATS,
         TICK,
         CLOSE,
     };
@@ -216,6 +273,7 @@ namespace lab8 {
         OK=0,
         WINDOWS,
         CUSTOMERS,
+        STATS,
 
         ERR=-1,
     };
@@ -248,20 +306,27 @@ namespace lab8 {
                 const auto live_queue = [&]{
                     std::lock_guard<std::mutex> guard(institutioin_mutex); 
                     buffer[0] = (char)ResponseVariant::OK;
-                    return institution.getWindows();
+                    return institution.getLiveQueue();
                 }();
+
+                std::cout << "Request for live queue:" << std::endl;
+                if (live_queue.len() > 0xFF)
+                    throw std::runtime_error("Live Queue len too huge.");
 
                 buffer[0] = (char)ResponseVariant::CUSTOMERS;
 
-                buffer[1] = (unsigned char)live_queue.size();
+                buffer[1] = (unsigned char)live_queue.len();
+                std::cout << "  : size is `" << live_queue.len() << "`." << std::endl;
 
                 size_t idx = 2;
                 for (auto customer : live_queue) {
+                    std::cout << "  : customer `" << customer << "`." << std::endl;
+
                     std::memcpy(buffer+idx, &customer, sizeof(customer));
                     idx += sizeof(customer);
                 }
 
-                if (write(data_socket, buffer, 1) == -1)
+                if (write(data_socket, buffer, idx) == -1)
                     throw std::runtime_error("Failed to write data socket.");
             }
 
@@ -269,20 +334,27 @@ namespace lab8 {
                 const auto e_queue = [&]{
                     std::lock_guard<std::mutex> guard(institutioin_mutex); 
                     buffer[0] = (char)ResponseVariant::OK;
-                    return institution.getWindows();
+                    return institution.getEQueue();
                 }();
+                std::cout << "Request for e queue:" << std::endl;
+
+                if (e_queue.len() > 0xFF)
+                    throw std::runtime_error("E Queue len too huge.");
 
                 buffer[0] = (char)ResponseVariant::CUSTOMERS;
 
-                buffer[1] = (unsigned char)e_queue.size();
+                buffer[1] = (unsigned char)e_queue.len();
+                std::cout << "  : size is `" << e_queue.len() << "`." << std::endl;
 
                 size_t idx = 2;
                 for (auto customer : e_queue) {
+                    std::cout << "  : customer `" << customer << "`." << std::endl;
+
                     std::memcpy(buffer+idx, &customer, sizeof(customer));
                     idx += sizeof(customer);
                 }
 
-                if (write(data_socket, buffer, 1) == -1)
+                if (write(data_socket, buffer, idx) == -1)
                     throw std::runtime_error("Failed to write data socket.");
             }
 
@@ -315,6 +387,16 @@ namespace lab8 {
 
             }
 
+            void get_stats_msg(char *buffer) {
+                std::cout << "Request for stats:" << std::endl;
+                buffer[0] = (char)ResponseVariant::STATS;
+                auto stats = [&] {
+                    std::lock_guard<std::mutex> guard (institutioin_mutex);
+                    return institution.getStats();
+                }();
+                *(Institution::Stats*)(buffer + 1) = stats;
+            }
+
             void close_msg(char *buffer) {
                 std::cout << "Request for end:" << std::endl;
                 buffer[0] = (char)ResponseVariant::OK;
@@ -327,6 +409,7 @@ namespace lab8 {
                 std::cout << "  : ok" << std::endl;
             }
 
+
             void operator()() {
                 char buffer[0x100];
 
@@ -334,6 +417,7 @@ namespace lab8 {
                     [&buffer, this](){ this->get_e_queue_msg(buffer); },
                     [&buffer, this](){ this->get_l_queue_msg(buffer); },
                     [&buffer, this](){ this->get_windows_msg(buffer); },
+                    [&buffer, this](){ this->get_stats_msg(buffer); },
                     [&buffer, this](){ this->tick_msg(buffer); },
                     [&buffer, this](){ this->close_msg(buffer); },
                 };
@@ -362,6 +446,7 @@ namespace lab8 {
 
 
     void server(void) {
+        std::srand(std::time(nullptr));
         Institution institution { 3 };
         std::mutex institutioin_mutex;
 
@@ -397,6 +482,231 @@ namespace lab8 {
 
     }
 
+    class ClientConnection {
+        char *_data;
+        int _data_socket;
+
+        static constexpr char _HELP_MSG[] = "\n"
+            " - help                -- prints this message.\n"
+            " - close/c             -- close connection.\n"
+            " - simulate/s <time>   -- simulate work of institution.\n"
+            " - tick/t              -- tick.\n"
+            " - windows/w           -- prints all windows.\n"
+            " - e_queue/e           -- prints e queue.\n"
+            " - l_queue/l           -- prints live queue.\n";
+
+        bool _read_response(ResponseVariant must_be) {
+            if (int len = read(_data_socket, _data, 0x100); len > 0) {
+                auto response_variant =  ResponseVariant(_data[0]);
+
+                if (response_variant == ResponseVariant::ERR) {
+                    std::cout << "Response an error message" << std::endl;
+                    return false;
+                } 
+
+                if (response_variant != must_be) {
+                    std::cout << "Get wront response message!" << std::endl;
+                    return false;
+                }
+            } else {
+                std::cout << "Failed to read from the server!" << std::endl;
+                return false;
+            }
+            return true;
+        }
+
+        bool _write_message(MessageVariant data) {
+            _data[0] = (char)data;
+
+            if (write(_data_socket, _data, 1) < 0) {
+                std::cout << "Failed to write to the server!" << std::endl;
+                return false;
+            } 
+
+            return true;
+        }
+
+        bool _do_tick() {
+
+            if (!_write_message(MessageVariant::TICK)) return false; 
+            if (!_read_response(ResponseVariant::OK))  return false;
+
+            std::cout << "Tick succsessfully!!" << std::endl;
+
+            return false;
+        }
+
+        template<typename Type>
+        std::vector<Type> _parse_array() {
+            std::vector<Type> data { };
+            size_t array_len = (size_t)_data[1];
+
+            data.reserve( array_len); 
+
+            size_t offset = 2;
+            for (size_t i = 0; i < array_len; i++) {
+                Type *elem = (Type*)(_data + offset);
+                data.push_back(*elem);
+                offset += sizeof(Type);
+            }
+
+            return std::move(data);
+        }
+
+        bool _do_windows() {
+            if (!_write_message(MessageVariant::GET_WINDOWS)) return false; 
+            if (!_read_response(ResponseVariant::WINDOWS))    return false;
+
+			auto windows = _parse_array<Window>();
+
+            std::cout << "Windows count: `" << windows.size() << "`." << std::endl;
+            for (auto window: windows) {
+                std::cout << " <=> window: " << window << std::endl;
+            }
+
+            return false;
+        }
+
+
+        bool _do_e_queue() {
+            if (!_write_message(MessageVariant::GET_E_QUEUE)) return false; 
+            if (!_read_response(ResponseVariant::CUSTOMERS))  return false;
+
+            auto customers = _parse_array<Customer>();
+
+            std::cout << "E queue count: `" << customers.size() << "`." << std::endl;
+            for (auto customer: customers) {
+                std::cout << " <=> customer: " << customer << std::endl;
+            }
+
+            return false;
+        }
+
+        bool _do_l_queue() {
+            if (!_write_message(MessageVariant::GET_L_QUEUE)) return false; 
+            if (!_read_response(ResponseVariant::CUSTOMERS))  return false;
+
+            auto customers = _parse_array<Customer>();
+
+            std::cout << "L queue count: `" << customers.size() << "`." << std::endl;
+            for (auto customer: customers) {
+                std::cout << " <=> customer: " << customer << std::endl;
+            }
+
+            return false;
+        }
+
+        size_t _calc_mins(const std::string& str) {
+            size_t res = 0;
+
+            std::string word { };
+            std::string line = str + " ";
+
+            for (char c : line) {
+                if (c == ' ') {
+                    char *offset;
+                    size_t v = std::strtoul(word.c_str(), &offset, 10); 
+                    if (offset == word.c_str()) {
+                        v = 0;
+                    } else {
+
+                        if (std::strcmp(offset, "min") == 0 || std::strcmp(offset, "m") == 0
+                                || std::strcmp(offset, "mins") == 0) v *= 1;
+
+                        else if (std::strcmp(offset, "hour") == 0 || std::strcmp(offset, "h") == 0
+                                || std::strcmp(offset, "hours") == 0) v *= 60;
+
+                        else v = 0;
+                    }
+
+                    word = std::string { };
+                    res += v;
+                }
+                word.push_back(c); 
+            }
+
+            return res;
+        }
+
+        bool _do_simulate() {
+            std::string line ( 0x100, '\0' );
+            std::cin.getline(line.data(), 0x100);
+
+            size_t time = _calc_mins(line); 
+            std::cout << "Will simulate " << time << "min." << std::endl;
+
+            size_t i = 0;
+            while (i < time) {
+                if (!_write_message(MessageVariant::TICK)) continue;
+                if (!_read_response(ResponseVariant::OK))  continue;
+
+                i++;
+            }
+
+            if (!_write_message(MessageVariant::GET_WINDOWS)) return false; 
+            if (!_read_response(ResponseVariant::WINDOWS))    return false;
+
+            auto windows = _parse_array<Window>();
+
+            if (!_write_message(MessageVariant::GET_E_QUEUE)) return false; 
+            if (!_read_response(ResponseVariant::CUSTOMERS))  return false;
+
+            auto e_queue = _parse_array<Customer>();
+
+            if (!_write_message(MessageVariant::GET_L_QUEUE)) return false; 
+            if (!_read_response(ResponseVariant::CUSTOMERS))  return false;
+
+            auto l_queue = _parse_array<Customer>();
+
+            std::cout << "L queue count: `" << l_queue.size() << "`." << std::endl;
+            for (auto customer: l_queue) {
+                std::cout << " <=> customer: " << customer << std::endl;
+            }
+
+            std::cout << "E queue count: `" << e_queue.size() << "`." << std::endl;
+            for (auto customer: e_queue) {
+                std::cout << " <=> customer: " << customer << std::endl;
+            }
+
+            std::cout << "Windows count: `" << windows.size() << "`." << std::endl;
+            for (auto window: windows) {
+                std::cout << " <=> window: " << window << std::endl;
+            }
+
+            return false;
+        }
+
+        public:
+            ClientConnection(int data_socket): _data(new char[0x1000]), _data_socket(data_socket) {}
+
+            bool do_command(const std::string& cmd) {
+                if (cmd == "help") {
+                    std::cout << _HELP_MSG << std::endl;
+                    return false;
+                }
+                if (cmd == "c" || cmd == "close") {
+                    std::cout << "closing..." << std::endl;
+                    return true;
+                } 
+                if (cmd == "tick" || cmd == "t") {
+                    return _do_tick();
+                }
+                if (cmd == "w" || cmd == "windows") {
+                    return _do_windows();
+                }
+                if (cmd == "e" || cmd == "e_queue") {
+                    return _do_e_queue();
+                }
+                if (cmd == "l" || cmd == "l_queue") {
+                    return _do_l_queue();
+                }
+                if (cmd == "s" || cmd == "simulate") {
+                    _do_simulate();
+                }
+                return false;
+            }
+    };
+
     void client(void) {
         while (true) {
             size_t pid = 0;
@@ -417,166 +727,14 @@ namespace lab8 {
 
             char data[0x100] = { '\0' };
 
-            const char HELP_MSG[] = "\n"
-                " - help        -- prints this message.\n"
-                " - close/c		-- close connection.\n"
-                " - tick/t		-- tick.\n"
-                " - windows/w   -- prints all windows.\n"
-                " - e_queue/e   -- prints e queue.\n"
-                " - l_queue/l   -- prints live queue.\n";
+            ClientConnection connection { data_socket };
 
-            std::cout << HELP_MSG << std::endl;;
             while (true) {
                 std::string cmd { };
                 std::cout << "lab8 client> ";
                 std::cin >> cmd;
 
-                if (cmd == "help") {
-                    std::cout << HELP_MSG << std::endl;
-
-                } else if (cmd == "c" || cmd == "close") {
-                    std::cout << "closing..." << std::endl;
-                    break;
-
-                }  else if (cmd == "tick" || cmd == "t") {
-                    data[0] = (char)MessageVariant::TICK;
-
-                    if (write(data_socket, data, 1) < 0) {
-                        std::cout << "Failed to write to the server!" << std::endl;
-                        continue;
-                    } 
-                    if (int len = read(data_socket, data, 0x100); len > 0) {
-                        auto response_variant =  ResponseVariant(data[0]);
-
-                        if (response_variant == ResponseVariant::ERR) {
-                            std::cout << "Response an error message" << std::endl;
-                            continue;
-                        } 
-
-                        if (response_variant != ResponseVariant::OK) {
-                            std::cout << "Get wront response message!" << std::endl;
-                            continue;
-                        }
-
-                        if (response_variant == ResponseVariant::OK) {
-                            std::cout << "No problems" << std::endl;
-                        }
-                    }
-
-                } else if (cmd == "w" || cmd == "windows") {
-                    data[0] = (char)MessageVariant::GET_WINDOWS;
-
-                    if (write(data_socket, data, 1) < 0) {
-                        std::cout << "Failed to write to the server!" << std::endl;
-                        continue;
-                    } 
-
-                    if (int len = read(data_socket, data, 0x100); len > 0) {
-                        std::cout << "Bytes: ";
-                        for (size_t i = 0; i < len; i++) {
-                            printf("%.2X ", data[i]); 
-                        }
-                        std::cout << std::endl;
-
-                        auto response_variant =  ResponseVariant(data[0]);
-
-                        if (response_variant == ResponseVariant::ERR) {
-                            std::cout << "Response an error message" << std::endl;
-                            continue;
-                        } 
-                        if (response_variant != ResponseVariant::WINDOWS) {
-                            std::cout << "Get wront response message!" << std::endl;
-                            continue;
-                        }
-
-                        size_t windows_size = (size_t)data[1];
-                        std::cout << "Windows count: `" << windows_size << "`." << std::endl;
-                        size_t offset = 2;
-                        for (size_t i = 0; i < windows_size; i++) {
-                            Window *window = (Window*)(data + offset);
-                            std::cout << " <=> window: " << *window  << std::endl;
-                        }
-
-                    } else {
-                        std::cout << "Failed to read from the server!" << std::endl;
-                    }
-                } else if (cmd == "e" || cmd == "e_queue") {
-                    data[0] = (char)MessageVariant::GET_E_QUEUE;
-
-                    if (write(data_socket, data, 1) < 0) {
-                        std::cout << "Failed to write to the server!" << std::endl;
-                        continue;
-                    } 
-
-                    if (int len = read(data_socket, data, 0x100); len > 0) {
-                        std::cout << "Bytes: ";
-                        for (size_t i = 0; i < len; i++) {
-                            printf("%.2X ", data[i]); 
-                        }
-                        std::cout << std::endl;
-
-                        auto response_variant =  ResponseVariant(data[0]);
-
-                        if (response_variant == ResponseVariant::ERR) {
-                            std::cout << "Response an error message" << std::endl;
-                            continue;
-                        } 
-                        if (response_variant != ResponseVariant::CUSTOMERS) {
-                            std::cout << "Get wront response message!" << std::endl;
-                            continue;
-                        }
-
-                        size_t customers_count = (size_t)data[1];
-                        std::cout << "customers count: `" << customers_count << "`." << std::endl;
-                        size_t offset = 2;
-
-                        for (size_t i = 0; i < customers_count; i++) {
-                            Customer *customer = (Customer*)(data + offset);
-                            std::cout << " <=> customer: " << *customer  << std::endl;
-                        }
-
-                    } else {
-                        std::cout << "Failed to read from the server!" << std::endl;
-                    }
-                } else if (cmd == "l" || cmd == "l_queue") {
-                    data[0] = (char)MessageVariant::GET_L_QUEUE;
-
-                    if (write(data_socket, data, 1) < 0) {
-                        std::cout << "Failed to write to the server!" << std::endl;
-                        continue;
-                    } 
-
-                    if (int len = read(data_socket, data, 0x100); len > 0) {
-                        std::cout << "Bytes: ";
-                        for (size_t i = 0; i < len; i++) {
-                            printf("%.2X ", data[i]); 
-                        }
-                        std::cout << std::endl;
-
-                        auto response_variant =  ResponseVariant(data[0]);
-
-                        if (response_variant == ResponseVariant::ERR) {
-                            std::cout << "Response an error message" << std::endl;
-                            continue;
-                        } 
-                        if (response_variant != ResponseVariant::CUSTOMERS) {
-                            std::cout << "Get wront response message!" << std::endl;
-                            continue;
-                        }
-
-                        size_t customers_count = (size_t)data[1];
-                        std::cout << "customers count: `" << customers_count << "`." << std::endl;
-                        size_t offset = 2;
-
-                        for (size_t i = 0; i < customers_count; i++) {
-                            Customer *customer = (Customer*)(data + offset);
-                            std::cout << " <=> customer: " << *customer  << std::endl;
-                        }
-
-                    } else {
-                        std::cout << "Failed to read from the server!" << std::endl;
-                    }
-                }
+                connection.do_command(cmd); 
             }
 
             data[0] = (char)MessageVariant::CLOSE;

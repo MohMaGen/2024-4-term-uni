@@ -3,7 +3,10 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
+
 namespace lab7 {
     void runLab7(void);
 
@@ -13,7 +16,20 @@ namespace lab7 {
 
         public:
             Queue(): _data(nullptr), _start(0), _end(0), _capacity(0) { }
-            Queue(size_t capacity): _data((Type*)std::malloc(sizeof(Type) * capacity)), _start(0), _end(0), _capacity(capacity) { }
+            Queue(size_t capacity):
+                _data((Type*)std::malloc(sizeof(Type) * capacity)),
+                _start(0),
+                _end(0),
+                _capacity(capacity) { }
+
+            Queue(const Queue& queue): 
+            	_data(nullptr), _start(queue._start), _end(queue._end), _capacity(queue._capacity)
+            {
+                _data = (Type*)std::malloc(sizeof(Type) * _capacity);
+                std::memcpy(_data, queue._data, queue._capacity);
+            } 
+
+            Queue(const Queue &&queue) noexcept = default; 
 
             ~Queue() { delete _data; }
 
@@ -25,7 +41,7 @@ namespace lab7 {
                     ++_capacity *= 2;
                     _data = (Type*)std::realloc(_data, sizeof(Type) * _capacity);
                }
-                _data[_end++] = std::move(value); 
+                _data[_end++] = std::move(value);
             }
 
     		/*
@@ -48,7 +64,7 @@ namespace lab7 {
             /*
              * Return len of the queue.
              */
-            size_t len(void) {
+            size_t len(void) const {
                 return _end - _start;
             }
 
@@ -85,8 +101,8 @@ namespace lab7 {
                     pointer _ptr;
 
             };
-            Iterator begin(void) { return Iterator(_data + _start); }
-            Iterator end(void) { return Iterator(_data + _end); }
+            Iterator begin(void) const { return Iterator(_data + _start); }
+            Iterator end(void) const { return Iterator(_data + _end); }
     };
 }
 
