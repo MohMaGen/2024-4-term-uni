@@ -17,33 +17,62 @@
 #include <sys/socket.h>
 
 namespace lab8 {
+    /*
+     * @brief Class for optional value
+     *
+     * Idea taken from Haskell Maybe monad and std::optional from c++.
+     */
     template<typename Type>
     struct Maybe {
         enum { Just=0, Nothing } variant;
         union { Type just; bool _; };
 
+        /*
+         * Default constructor creates nothing variant.
+         */
         Maybe<Type>(): variant(Nothing), _(false) {}
+
+        /*
+         * Create new Just container.
+         */
         Maybe<Type>(Type value): variant(Just), just(value) {}
 
 
+        /*
+         * Check if contains value.
+         *
+         * @return bool if contains value.
+         */
         constexpr bool hasSome() const noexcept { return variant != Nothing; }
         explicit operator bool() { return hasSome(); }
 
+        /*
+         * Get value or trhow std::out_of_range if irs empty.
+         */
         const Type& operator*() const {
             if (variant == Nothing) throw std::out_of_range("Attempt ot get Nothing!!!");
             return just;
         }
 
+        /*
+         * Get value or trhow std::out_of_range if irs empty.
+         */
         Type& operator*() {
             if (variant == Nothing) throw std::out_of_range("Attempt ot get Nothing!!!");
             return just;
         }
 
+        /*
+         * Get value or trhow std::out_of_range if irs empty.
+         */
         const Type* operator->() const {
             if (variant == Nothing) throw std::out_of_range("Attempt ot get Nothing!!!");
             return &just;
         }
 
+        /*
+         * Get value or trhow std::out_of_range if irs empty.
+         */
         Type* operator->() {
             if (variant == Nothing) throw std::out_of_range("Attempt ot get Nothing!!!");
             return &just;
@@ -51,12 +80,36 @@ namespace lab8 {
     };
 
 
+	/*
+     * Class describing Customer without default constructor.
+     *
+     * Customers can be three types: Junior Middle or Senior.
+     * (Stupid joke Middle must be Adult, but...)
+     *
+     * Customers has time_to_serve -- time needed by window to satisfy
+     * needs of customer.
+     */
     class Customer {
         public:
+            /*
+             * Type of Customer
+             */
             enum CustomerType { Junior=0, Middle, Senior } type;
+
+            /*
+             * Time needed by window to satisfy
+             * needs of customer.
+             */
             size_t time_to_serve;
 
             Customer() = delete;
+
+            /*
+             * Create new customer of random type. Also can return empty Maybe which means
+             * no customer generated this time.
+             *
+             * @return Maybe<Customer> optional customer.
+             */
             static Maybe<Customer> Generate() {
                 double chance = (double)std::rand() / (double)RAND_MAX;
 
@@ -66,6 +119,13 @@ namespace lab8 {
 
                 return { };
             }
+
+            /*
+             * Construct customer.
+             *
+             * @type -- type of the customer.
+             * @time_to_serve -- time needed by window to serve customer.
+             */
             Customer(CustomerType type, size_t time_to_serve): type{ type }, time_to_serve(time_to_serve) {}
     };
 
@@ -83,15 +143,30 @@ namespace lab8 {
         return customer ? os << "Just `" << *customer << "`" : os << "Nothing";
     }
 
+    /*
+     * Class describing window that can serve customer.
+     *
+     * It's contains customer and serving time.
+     *
+     * Window can be update and ticked.
+     */
     class Window {
         Maybe<Customer> _customer;
         size_t _serving_time = 0;
         public:
+            /*
+             * Apply 1 min delta time to counters.
+             */
             void tick(void) {
                 if (!_customer) return;
                 _serving_time++;
             }
 
+            /*
+             * Update window.
+             *
+             * @return 1 if customer have served this update or 0.
+             */
             int update() {
                 if (!_customer) return 0;
 
@@ -104,14 +179,29 @@ namespace lab8 {
                 return 0;
             }
 
+            /*
+             * Return customer.
+             *
+             * @return ref to the customer.
+             */
             const Maybe<Customer>& getCustomer(void) const noexcept {
                 return _customer;
             } 
 
+            /*
+             * Check if contains customer.
+             *
+             * @return if contains customer.
+             */
             bool hasCustomer(void) const noexcept {
                 return _customer.hasSome();
             }
 
+            /*
+             * Update customer and serving time.
+             *
+             * @param customer -- new cusomer value.
+             */
             void setCustomer(Customer customer) noexcept {
                 _customer = {  customer };
                 _serving_time = 0;
@@ -126,15 +216,28 @@ namespace lab8 {
         return os;
     }
 
+    /*
+     * Class describing Institution that contains all windows and queues.
+     */
     class Institution {
         lab7::Queue<Customer> _e_queue { 10 }, _l_queue { 10 };
         std::vector<Window> _windows { 3 }; 
 
+        // Current time in mins from start of the shift.
         size_t _inst_time = 0;
+
+        // Time to create new customers.
         size_t _time_to_next_cutomer_wave = 0;
+
+        // Count of customers that have been served.
         size_t _served_customers = 0;
+
+        // Count of all customers entered to institution.
         size_t _customers_count  = 0;
 
+		/*
+         * Generate three or less customers.
+         */
         void _new_customers() {
             std::cout << "  - New customers:";
 
@@ -178,8 +281,16 @@ namespace lab8 {
             std::cout << std::endl;
         }
 
+        /*
+         * Update tick. (Update all components)
+         */
         void _update() {
             std::cout << "UPDATE:" << std::endl;
+
+            if (_inst_time >= 540) {
+                std::cout << "  - shift ends..." << std::endl;
+                return;
+            }
 
             if (_time_to_next_cutomer_wave == 0) {
                 _new_customers();
@@ -190,14 +301,19 @@ namespace lab8 {
                 _served_customers += window.update();
                 if (window.hasCustomer()) continue;
 
-                if (_e_queue.len() > 0) {
-                    window.setCustomer(_e_queue.shift());  
-                } else if (_l_queue.len() > 0) {
-                    window.setCustomer(_l_queue.shift());  
-                }
+                if (_inst_time < 180 || _inst_time > 240) { 
+                    if (_e_queue.len() > 0) {
+                        window.setCustomer(_e_queue.shift());  
+                    } else if (_l_queue.len() > 0) {
+                        window.setCustomer(_l_queue.shift());  
+                    }
+				}
             }
         }
 
+        /*
+         * Display main information of the institution.
+         */
         void _display() {
             std::cout << "DISPLAY:" << std::endl;
             std::cout << "  - E queue:";
@@ -225,26 +341,56 @@ namespace lab8 {
                 _display();
             } 
 
+            /*
+             * Get vector of windows.
+             *
+             * @return ref to the windows.
+             */
             const std::vector<Window>& getWindows(void) const noexcept {
                 return _windows;
             }
 
+            /*
+             * Get live queue.
+             *
+             * @return ref to the live queue.
+             */
             const lab7::Queue<Customer>&  getLiveQueue(void) const noexcept {
                 return _l_queue;
             } 
 
+            /*
+             * Get e queue.
+             *
+             * @return ref to the e queue.
+             */
             const lab7::Queue<Customer>& getEQueue(void) const noexcept {
                 return _e_queue;
             } 
 
+            /*
+             * Stats of the shift.
+             */
             struct Stats {
+                // count of customers.
                 size_t customers_count;
+
+                // count of served customers.
                 size_t served_customers;
             };
+
+            /*
+             * Return stats of this shift.
+             * 
+             * @return Stats of the shift.
+             */
             Stats getStats(void) const noexcept {
                 return Stats { _customers_count, _served_customers };
             }
 
+            /*
+             * Tick
+             */
             void tick() {
                 _update();
 
@@ -256,10 +402,16 @@ namespace lab8 {
             }
     };
 
+    /*
+     * Create socket path by pid of server process.
+     */
     std::string getSocketPath(size_t pid) {
         return "/tmp/cpp_labs-lab8-" + std::to_string(pid);
     }
 
+    /*
+     * Message variant 
+     */
     enum class MessageVariant: char {
         GET_E_QUEUE=0,
         GET_L_QUEUE,
@@ -269,6 +421,9 @@ namespace lab8 {
         CLOSE,
     };
 
+    /*
+     * Response variant.
+     */
     enum class ResponseVariant: char {
         OK=0,
         WINDOWS,
@@ -278,6 +433,10 @@ namespace lab8 {
         ERR=-1,
     };
 
+    /*
+     * Server Connection.
+     * 
+     */
     class Connection {
         Institution &institution;
         std::mutex &institutioin_mutex;
@@ -285,14 +444,30 @@ namespace lab8 {
         bool should_close = false;
 
         public:
+            Connection() = delete;
+
+            /*
+             * Create connection.
+             * 
+             * @param institution -- ref to the institution.
+             * @param institutioin_mutex -- ref to the mutex of institutioin.
+             * @param data_socket -- socket to read and write to the client.
+             */
             Connection(Institution& institution, std::mutex &institutioin_mutex, int data_socket):
                 institution(institution), institutioin_mutex(institutioin_mutex), data_socket(data_socket) {}
 
+            /*
+             * Serve tick message.
+             *
+             * @param buffer.
+             */
             void tick_msg(char *buffer) {
                 std::cout << "Request for tick:" << std::endl;
 
-                std::lock_guard<std::mutex> guard(institutioin_mutex); 
-                institution.tick();
+                {
+                    std::lock_guard<std::mutex> guard(institutioin_mutex); 
+                    institution.tick();
+                }
 
                 buffer[0] = (char)ResponseVariant::OK;
 
@@ -302,6 +477,11 @@ namespace lab8 {
                 std::cout << "  : ok" << std::endl;
             }
 
+            /*
+             * Serve get live queue message.
+             *
+             * @param buffer.
+             */
             void get_l_queue_msg(char *buffer) {
                 const auto live_queue = [&]{
                     std::lock_guard<std::mutex> guard(institutioin_mutex); 
@@ -330,6 +510,11 @@ namespace lab8 {
                     throw std::runtime_error("Failed to write data socket.");
             }
 
+            /*
+             * Serve get e queue message.
+             *
+             * @param buffer.
+             */
             void get_e_queue_msg(char *buffer) {
                 const auto e_queue = [&]{
                     std::lock_guard<std::mutex> guard(institutioin_mutex); 
@@ -358,6 +543,11 @@ namespace lab8 {
                     throw std::runtime_error("Failed to write data socket.");
             }
 
+            /*
+             * Serve get windows message.
+             *
+             * @param buffer.
+             */
             void get_windows_msg(char *buffer) {
                 const auto &windows = [&]{
                     std::lock_guard<std::mutex> guard(institutioin_mutex); 
@@ -387,16 +577,30 @@ namespace lab8 {
 
             }
 
+            /*
+             * Serve get stats message.
+             *
+             * @param buffer.
+             */
             void get_stats_msg(char *buffer) {
                 std::cout << "Request for stats:" << std::endl;
-                buffer[0] = (char)ResponseVariant::STATS;
                 auto stats = [&] {
                     std::lock_guard<std::mutex> guard (institutioin_mutex);
                     return institution.getStats();
                 }();
+
+                buffer[0] = (char)ResponseVariant::STATS;
                 *(Institution::Stats*)(buffer + 1) = stats;
+
+                if (write(data_socket, buffer, sizeof(Institution::Stats) + 1) == -1)
+                    throw std::runtime_error("Failed to write data socket.");
             }
 
+            /*
+             * Serve close message.
+             *
+             * @param buffer.
+             */
             void close_msg(char *buffer) {
                 std::cout << "Request for end:" << std::endl;
                 buffer[0] = (char)ResponseVariant::OK;
@@ -410,6 +614,9 @@ namespace lab8 {
             }
 
 
+            /*
+             * Operator () to call main loop of connection.
+             */
             void operator()() {
                 char buffer[0x100];
 
@@ -445,9 +652,12 @@ namespace lab8 {
     };
 
 
+    /*
+     * Server logic.
+     */
     void server(void) {
         std::srand(std::time(nullptr));
-        Institution institution { 3 };
+        Institution institution { 2 };
         std::mutex institutioin_mutex;
 
         size_t pid = getpid();
@@ -482,6 +692,9 @@ namespace lab8 {
 
     }
 
+    /*
+     * Class of client connection.
+     */
     class ClientConnection {
         char *_data;
         int _data_socket;
@@ -495,6 +708,12 @@ namespace lab8 {
             " - e_queue/e           -- prints e queue.\n"
             " - l_queue/l           -- prints live queue.\n";
 
+        /*
+         * Read to the _data from server and check
+         * if respoinse variant equal to must_be.
+         * 
+         * @param must_be -- value that must be.
+         */
         bool _read_response(ResponseVariant must_be) {
             if (int len = read(_data_socket, _data, 0x100); len > 0) {
                 auto response_variant =  ResponseVariant(_data[0]);
@@ -515,6 +734,11 @@ namespace lab8 {
             return true;
         }
 
+        /*
+         * Write message to the server.
+         *
+         * @data -- variant of the message to write.
+         */
         bool _write_message(MessageVariant data) {
             _data[0] = (char)data;
 
@@ -526,8 +750,10 @@ namespace lab8 {
             return true;
         }
 
+        /*
+         * Complete tick command.
+         */
         bool _do_tick() {
-
             if (!_write_message(MessageVariant::TICK)) return false; 
             if (!_read_response(ResponseVariant::OK))  return false;
 
@@ -536,12 +762,18 @@ namespace lab8 {
             return false;
         }
 
+        /*
+         * Parse payload of response.
+         *
+         * @generic_param Type type of the paylaod element.
+         * @return vector of resulting elements.
+         */
         template<typename Type>
         std::vector<Type> _parse_array() {
             std::vector<Type> data { };
             size_t array_len = (size_t)_data[1];
 
-            data.reserve( array_len); 
+            data.reserve(array_len); 
 
             size_t offset = 2;
             for (size_t i = 0; i < array_len; i++) {
@@ -553,6 +785,9 @@ namespace lab8 {
             return std::move(data);
         }
 
+        /*
+         * Complete windows command.
+         */
         bool _do_windows() {
             if (!_write_message(MessageVariant::GET_WINDOWS)) return false; 
             if (!_read_response(ResponseVariant::WINDOWS))    return false;
@@ -567,7 +802,9 @@ namespace lab8 {
             return false;
         }
 
-
+        /*
+         * Complete e queue command.
+         */
         bool _do_e_queue() {
             if (!_write_message(MessageVariant::GET_E_QUEUE)) return false; 
             if (!_read_response(ResponseVariant::CUSTOMERS))  return false;
@@ -582,6 +819,9 @@ namespace lab8 {
             return false;
         }
 
+        /*
+         * Complete live queue command.
+         */
         bool _do_l_queue() {
             if (!_write_message(MessageVariant::GET_L_QUEUE)) return false; 
             if (!_read_response(ResponseVariant::CUSTOMERS))  return false;
@@ -596,6 +836,14 @@ namespace lab8 {
             return false;
         }
 
+        /*
+         * Calculate amount of mins in string line.
+         *
+         * string must conatains whitespace sparated values of
+         * format `<uint>(min|m|mins|h|hour|hours)`.
+         * 
+         * @return resulting sum of value.
+         */
         size_t _calc_mins(const std::string& str) {
             size_t res = 0;
 
@@ -628,6 +876,9 @@ namespace lab8 {
             return res;
         }
 
+        /*
+         * Complete simulate command.
+         */
         bool _do_simulate() {
             std::string line ( 0x100, '\0' );
             std::cin.getline(line.data(), 0x100);
@@ -639,7 +890,6 @@ namespace lab8 {
             while (i < time) {
                 if (!_write_message(MessageVariant::TICK)) continue;
                 if (!_read_response(ResponseVariant::OK))  continue;
-
                 i++;
             }
 
@@ -673,12 +923,31 @@ namespace lab8 {
                 std::cout << " <=> window: " << window << std::endl;
             }
 
+            if (!_write_message(MessageVariant::GET_STATS)) return false; 
+            if (!_read_response(ResponseVariant::STATS))  return false;
+
+            Institution::Stats *stats = (Institution::Stats *)(_data + 1);
+            std::cout << "Stats:" << std::endl;
+            std::cout << "  - customer count " << stats->customers_count << std::endl;
+            std::cout << "  - served customers " << stats->served_customers << std::endl;
+            std::cout << std::endl;
+
             return false;
         }
 
         public:
+            /*
+             * Create clinet connection.
+             *
+             * @param data_socket - socket of server connection.
+             */
             ClientConnection(int data_socket): _data(new char[0x1000]), _data_socket(data_socket) {}
 
+            /*
+             * Comlete command from string.
+             * 
+             * @param command to complete.
+             */
             bool do_command(const std::string& cmd) {
                 if (cmd == "help") {
                     std::cout << _HELP_MSG << std::endl;
@@ -707,6 +976,9 @@ namespace lab8 {
             }
     };
 
+    /*
+     * Do client logic.
+     */
     void client(void) {
         while (true) {
             size_t pid = 0;
@@ -744,6 +1016,9 @@ namespace lab8 {
     }
 
 
+    /*
+     * Start lab.
+     */
     void runLab8(void) {
         std::string run_type { };
         std::cin >> run_type;
@@ -753,7 +1028,6 @@ namespace lab8 {
                 server();
             else
                 client();
-
         } catch (std::exception& e) {
             std::cerr << "Failed with: `" << e.what() << "`." << std::endl;
         }
