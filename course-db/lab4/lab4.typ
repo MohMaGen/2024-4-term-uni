@@ -68,19 +68,152 @@
 )
 
 = Решение
+
 == Запрос на применение агрегирующих оконных функций
-- Средняя стоимость проектов разделённых по типам.
-- SQL запрос:
-    ```sql
-    SELECT
-        p.title AS "Title",
-        t.type_name AS "Type",
-        p.cost_rub AS "Cost",
-        AVG(p.cost_rub) OVER( PARTITION BY p.project_type_id ) AS "AVG"
-    FROM projects AS p
-    LEFT JOIN project_types AS t 
-        ON t.project_type_id = p.project_type_id;
-    ```
-- Результат.
+Средняя стоимость проектов разделённых по типам.
+SQL запрос:
+```sql
+SELECT
+    p.title AS "Title",
+    t.type_name AS "Type",
+    p.cost_rub AS "Cost",
+    AVG(p.cost_rub) OVER( PARTITION BY p.project_type_id ) AS "AVG"
+FROM projects AS p
+LEFT JOIN project_types AS t 
+    ON t.project_type_id = p.project_type_id;
+```
+#figure(
+    kind: table,
+    caption: "Результат.",
+    tablex(
+        align: center + horizon,
+        auto-vlines: false,
+        header-rows: 1,
+        columns: (auto, auto, auto, auto),
+        ..csv("./1.csv").flatten(),
+    )
+)
+#pagebreak()
+
+== Запрос на применение ранжирующих оконных функций.
+Проекты по возрастанию даты.
+```sql
+SELECT
+    title,
+    start_date,
+    row_number() OVER date_grades
+FROM projects
+WINDOW date_grades AS (order by start_date)
+```
+#figure(
+    kind: table,
+    caption: "Результат.",
+    tablex(
+        align: center + horizon,
+        auto-vlines: false,
+        header-rows: 1,
+        columns: (auto, auto, auto),
+        ..csv("./2.csv").flatten(),
+    )
+)
+#pagebreak()
+
+== Пары атрибутов одной сущности при определенном условии.
+Пары проектов с одинаковой продолжительностью.
+
+```sql
+SELECT
+    p1.duration_years,
+    p1.project_id as "id1", p1.title,
+    p2.project_id as "id2", p2.title
+FROM projects as p1, projects as p2
+WHERE
+    p1.duration_years = p2.duration_years AND
+    p1.project_id != p2.project_id;
+```
+
+#figure(
+    kind: table,
+    caption: "Результат.",
+    tablex(
+        align: center + horizon,
+        auto-vlines: false,
+        header-rows: 1,
+        columns: (auto, auto, auto, auto, auto),
+        ..csv("./3.csv").flatten(),
+    )
+)
+
+#pagebreak()
+== Пары атрибутов одной сущности при определенном условии с устранением избыточности.
+
+Пары проектов с одинаковой продолжительностью.
+
+```sql
+SELECT
+    p1.duration_years,
+    p1.project_id as "id1", p1.title,
+    p2.project_id as "id2", p2.title
+FROM projects as p1, projects as p2
+WHERE
+    p1.duration_years = p2.duration_years AND
+    p1.project_id > p2.project_id;
+```
+
+#figure(
+    kind: table,
+    caption: "Результат.",
+    tablex(
+        align: center + horizon,
+        auto-vlines: false,
+        header-rows: 1,
+        columns: (auto, auto, auto, auto, auto),
+        ..csv("./4.csv").flatten(),
+    )
+)
+
+== Однотабличный запрос, использующий подзапрос в условии отбора строк поле фразы WHERE.
+Проекты дороже средней стоимости.
+```sql
+SELECT p.title, p.cost_rub, (SELECT AVG(_p.cost_rub) FROM projects AS _p)
+FROM projects AS p
+WHERE p.cost_rub > (SELECT AVG(_p.cost_rub) FROM projects AS _p);
+```
+#figure(
+    kind: table,
+    caption: "Результат.",
+    tablex(
+        align: center + horizon,
+        auto-vlines: false,
+        header-rows: 1,
+        columns: (auto, auto, auto),
+        ..csv("./5.csv").flatten(),
+    )
+)
+#pagebreak()
+== Многотабличный запрос, использующий подзапрос в условии отбора строк поле фразы WHERE.
+Проекты, авторы которых  старше среднего возраста.
+```sql
+SELECT 
+    p.title, a.family_name, a.age,
+    (SELECT AVG(_a.age) FROM authors AS _a)
+FROM projects as p, authors as a
+WHERE
+    a.age >= (SELECT AVG(_a.age) FROM authors AS _a) AND
+    a.author_id = p.author_id;
+```
+#figure(
+    kind: table,
+    caption: "Результат.",
+    tablex(
+        align: center + horizon,
+        auto-vlines: false,
+        header-rows: 1,
+        columns: (auto, auto, auto, auto),
+        ..csv("./6.csv").flatten(),
+    )
+)
+#pagebreak()
+==
 
 
