@@ -214,6 +214,141 @@ WHERE
     )
 )
 #pagebreak()
-==
+== Запрос, использующий подзапрос с агрегатной функцией в условии отбора строк поле фразы WHERE.
+Проекты составляющие больше 50% общей стоимоти всех проектов этого типа.
+```sql
+SELECT	
+    p.title AS "Title",
+    p.project_type_id AS "Type ID",
+    p.cost_rub AS "Cost"
+FROM projects AS p
+WHERE
+    p.cost_rub * 2 >= (SELECT SUM(_p.cost_rub) 
+                        FROM projects AS _p
+                        WHERE  _p.project_type_id = p.project_type_id);
+```
 
+#figure(
+    kind: table,
+    caption: "Результат.",
+    tablex(
+        align: center + horizon,
+        auto-vlines: false,
+        header-rows: 1,
+        columns: (auto, auto, auto),
+        ..csv("./7.csv").flatten(),
+    )
+)
 
+== Запрос на использование подзапросов, которые выдают много строк с помощью оператора IN.
+Проекты авторов старше 30 лет.
+
+```sql
+SELECT p.title, p.cost_rub
+FROM projects AS p
+WHERE p.author_id IN (SELECT a.author_id FROM authors AS a WHERE a.age >= 30);
+```
+#figure(
+    kind: table,
+    caption: "Результат.",
+    tablex(
+        align: center + horizon,
+        auto-vlines: false,
+        header-rows: 1,
+        columns: (auto, auto),
+        ..csv("./8.csv").flatten(),
+    )
+)
+
+== Запрос, использующий подзапрос в предложении HAVING.
+Годы в которых средняя стоимость проектов была больше одщей средней стоимости.
+```sql
+SELECT 
+    EXTRACT(YEAR FROM p.start_date) AS year,
+    AVG(p.cost_rub) AS avg_cost
+FROM projects AS p
+GROUP BY year
+HAVING AVG(p.cost_rub) >= (SELECT AVG(p.cost_rub) FROM projects AS p)
+ORDER BY year;
+```
+#figure(
+    kind: table,
+    caption: "Результат.",
+    tablex(
+        align: center + horizon,
+        auto-vlines: false,
+        header-rows: 1,
+        columns: (auto, auto),
+        ..csv("./9.csv").flatten(),
+    )
+)
+
+#pagebreak()
+== Запрос, использующий подзапрос в предложении FROM.
+Названия, стоимость и дата начала всех проектов. 
+```sql
+SELECT *
+FROM (SELECT title, cost_rub, start_date FROM projects)
+ORDER BY start_date;
+```
+#figure(
+    kind: table,
+    caption: "Результат.",
+    tablex(
+        align: center + horizon,
+        auto-vlines: false,
+        header-rows: 1,
+        columns: (auto, auto, auto),
+        ..csv("./10.csv").flatten(),
+    )
+)
+
+#pagebreak()
+== Запрос на использование соотнесенного подзапроса, который выдает много строк с помощью оператора IN.
+Типы проектов на которыми работал Иванов.
+```sql
+SELECT t.project_type_id, t.type_name
+FROM project_types AS t
+WHERE 1 IN (SELECT p.author_id
+            FROM projects as p
+            WHERE p.project_type_id = t.project_type_id);
+```
+#figure(
+    kind: table,
+    caption: "Результат.",
+    tablex(
+        align: center + horizon,
+        auto-vlines: false,
+        header-rows: 1,
+        columns: (auto, auto),
+        ..csv("./11.csv").flatten(),
+    )
+)
+
+== Запрос на сравнение таблицы с собой.
+Проекты дороже средней стоимости проектов тогоже типа.
+```sql
+SELECT 
+    p.title AS "Title",
+    p.cost_rub AS "Cost",
+    p.project_type_id AS "Type Id",
+    (SELECT AVG(p3.cost_rub) 
+        FROM projects AS p3 
+        WHERE p3.project_type_id = p.project_type_id) AS "Type Avg"
+FROM projects AS p
+WHERE p.cost_rub > (SELECT AVG(p2.cost_rub) 
+                    FROM projects AS p2 
+                    WHERE p2.project_type_id = p.project_type_id);
+```
+
+#figure(
+    kind: table,
+    caption: "Результат.",
+    tablex(
+        align: center + horizon,
+        auto-vlines: false,
+        header-rows: 1,
+        columns: (auto, auto, auto, auto),
+        ..csv("./12.csv").flatten(),
+    )
+)
