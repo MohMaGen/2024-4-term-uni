@@ -2,7 +2,7 @@ target := target/
 
 labs := $(wildcard lab*/)
 include-dirs := $(patsubst %, -I %, $(labs)) -I./raylib/src/
-ld-flags := -L./target -lraylib
+ld-flags := -L./target -lraylib -lm
 incs := $(wildcard *.hpp)
 
 sources := $(wildcard lab*/*.cpp)

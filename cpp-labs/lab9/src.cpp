@@ -1,5 +1,5 @@
 #include "lab9.hpp"
-#include <codecvt>
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 
@@ -153,7 +153,7 @@ namespace lab9 {
             (fst.real * snd.real + fst.imag * snd.imag)
                     / (snd.real * snd.real + snd.imag * snd.imag),
             (fst.imag * snd.real - fst.real * snd.imag)
-            		/ (snd.real * snd.real + snd.imag * snd.imag)
+                    / (snd.real * snd.real + snd.imag * snd.imag)
         };
     }
 
@@ -179,23 +179,62 @@ namespace lab9 {
         return fst.real == snd.real && fst.imag == snd.imag;
     }
 
+    Complex operator-(const Complex& val) {
+        return { -val.real, -val.imag };
+    }
 
-	class Equation {
-        Complex _a, _b, _c;
+    /*
+     * Calculate absolute of complex number
+     *
+     * @param z -- complex number.
+     * @return absolute of z.
+     */
+    Complex abs(const Complex& z) {
+        return {std::sqrt(z.real*z.real + z.imag*z.imag), 0};
+    }
+
+    /*
+     * Calculate sqrt of complex number.
+     *
+     * @param z -- complex number.
+     * @return sqrt of z.
+     */
+    Complex sqrt(const Complex& z) {
+        const auto &[a, b] = z;
+
+        if (b == 0) {
+            return { std::sqrt(a), 0 };
+        } else {
+            return {
+                std::sqrt((abs(z).real + a) / 2.0),
+                b / std::abs(b) * std::sqrt((abs(z).real - a) / 2.0)
+            };
+        }
+    }
+
+
+    class Equation {
+        Complex _a, _b, _c, _x_1, _x_2;
 
         public:
-            Equation(double a, double b, double c): _a{a, 0}, _b{b, 0}, _c{c, 0} { }
-            Equation(Complex a, Complex b, Complex c): _a{a}, _b{b}, _c{c} { }
+            Equation(double a, double b, double c): Equation({a, 0}, {b, 0}, {c, 0}) { }
+            Equation(Complex a, Complex b, Complex c): _a{a}, _b{b}, _c{c} {
+                Complex D = _b * _b - cn(4,0) * _a * _c;
+
+                _x_1 = ((-_b) + sqrt(D)) / (cn(2,0) * _a); 
+                _x_2 = ((-_b) - sqrt(D)) / (cn(2,0) * _a); 
+            }
 
         friend std::ostream& operator<<(std::ostream& os, const Equation& equation);
-	};
+    };
     std::ostream& operator<<(std::ostream& os, const Equation& equation) {
         bool is_prev = false;
         if (!equation._a.isZero()) {
-            if (equation._a.real == 0 || equation._a.imag == 0)
+            if (equation._a.real == 0 || equation._a.imag == 0) {
                 os << equation._a.displayCosmetic();
-            else
+            } else {
                 os << "(" << equation._a.displayCosmetic() << ")";
+            }
 
             os << " x^2";
             is_prev = true;
@@ -204,10 +243,11 @@ namespace lab9 {
         if (!equation._b.isZero()) {
             if (is_prev) os << " + ";
 
-            if (equation._b.real == 0 || (equation._b.imag == 0 && equation._b.real > 0))
+            if (equation._b.real == 0 || (equation._b.imag == 0 && equation._b.real > 0)) {
                 os << equation._b.displayCosmetic();
-            else
+            } else {
                 os << "(" << equation._b.displayCosmetic() << ")";
+            }
 
             os << " x";
         }
@@ -217,14 +257,17 @@ namespace lab9 {
             os << equation._c.displayCosmetic();
         }
 
-        os << " = 0";
+        os << " = 0;" 
+            << " x_1 = " << equation._x_1.displayCosmetic() << ","
+            << " x_2 = " << equation._x_2.displayCosmetic();
+
         return os;
     }
 
-	void runLab9(void) {
+    void runLab9(void) {
         std::cout << "Lab9" << std::endl;
 
-        Equation eq_1 { {10, 1}, {20, 2}, {0, 4} };
+        Equation eq_1 { 2, 4, 2 };
         std::cout << eq_1 << std::endl;
-	}
+    }
 }
