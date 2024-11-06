@@ -153,3 +153,52 @@ ORDER BY 1 desc;
 #raw(read("./4.sql"), lang: "sql", block: true)
 #figure(tablex(columns: (auto, auto, auto), auto-vlines: false, header-rows:1,
         align: center + horizon, ..csv("./4.csv").flatten()))
+
+
+#pagebreak()
+== Задание 5.
+
+#raw(read("./5.sql"), lang: "sql", block: true)
+#figure(tablex(columns: (auto, auto, auto), auto-vlines: false, header-rows:1,
+        align: center + horizon, ..csv("./5.csv").flatten()))
+
+#pagebreak()
+== Задание 6.
+
+#raw(read("./6.sql"), lang: "sql", block: true)
+#figure(tablex(columns: (auto, auto, auto, auto), auto-vlines: false, header-rows:1,
+        align: center + horizon, ..csv("./6.csv").flatten()))
+
+#pagebreak()
+== Задание 7.
+
+#raw(read("./7.sql"), lang: "sql", block: true)
+#figure(tablex(columns: (auto, auto, auto, auto, auto, auto, auto), 
+        auto-vlines: false, header-rows:1,
+        align: center + horizon, ..csv("./7.csv").flatten()))
+
+
+#pagebreak()
+== Задание 8.
+
+#raw(read("./8.sql"), lang: "sql", block: true)
+#figure(tablex(columns: (auto, auto, auto, auto, auto, auto, auto), 
+        auto-vlines: false, header-rows:1,
+        align: center + horizon, ..csv("./8.csv").flatten()))
+
+#pagebreak()
+== Задание 9.
+
+#raw(read("./9.sql"), lang: "sql", block: true)
+#figure(tablex(columns: (auto, auto), 
+        auto-vlines: false, header-rows:1,
+        align: center + horizon, ..csv("./9.csv").flatten()))
+
+#pagebreak()
+== Задание 10.
+
+#raw(read("./10.sql"), lang: "sql", block: true)
+#figure(tablex(columns: (auto, auto, auto, auto, auto, auto, auto), 
+        auto-vlines: false, header-rows:1,
+        align: center + horizon, ..csv("./10.csv").flatten()))
+
