@@ -36,3 +36,4 @@
 }
 
 #include "./lab1/report.typ"
+#include "./lab2/report.typ"
