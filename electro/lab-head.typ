@@ -1,3 +1,5 @@
+#set text(font: "Noto Sans Georgian")
+
 #set align(horizon + center)
 #text(size: 24pt)[
     ЭЛЕКТРОТЕХНИКА И ЭЛЕКТРОНИКА\

@@ -10,12 +10,10 @@ create or replace function Period(in lower date, in upper date)
     )
     language plpgsql
 as
-$$
-begin
+$$ begin
     return query
         select * from projects as p
         where p.start_date between lower and upper;
-end
-$$;
+end $$;
 
 select * from Period('2004-1-1', '2020-1-1');
