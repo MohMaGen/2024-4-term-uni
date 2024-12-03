@@ -30,12 +30,16 @@
     if it.level == 1 {
         pagebreak()
         align(center, text(size: 12.5pt, "Лабораторно-практическое занятие №" + counter(heading).display()))
-        align(center, text(size: 15pt, upper(it.body)))
+        align(center, text(size: 16pt, upper(it.body)))
     }
 	else if it.level == 2 {
-        align(center, text(size: 13pt, it.body))	
+        align(center, text(size: 14pt, it.body))	
+    }
+    else if it.level == 3 {
+        align(center, text(size: 12.5pt, it.body))	
     }
 }
 
 #include "./lab1/report.typ"
 #include "./lab2/report.typ"
+#include "./lab3/report.typ"

@@ -21,3 +21,10 @@
     
     ret
 }
+
+#let clear_csv(csv) = {
+    csv.map(row => row.map(v => {
+        let ret = calc.round(float(v.trim()), digits: 1)
+        if ret.is-nan() { v } else { ret }
+    }))
+}
