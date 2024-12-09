@@ -28,6 +28,7 @@ void read_table(FILE *csv, struct table *table)
 {
     struct row curr = { 0 };
     while (fscanf(csv, "%f, %f, %f, %f, %f", &curr.C, &curr.I, &curr.U_R, &curr.U_L, &curr.U_C) == 5) {
+        curr.I *= 0.001;
         da_push(table, curr);
     }
 }
@@ -40,6 +41,25 @@ struct result_table {
     struct result_row *rows;
     size_t len, cap;
 };
+
+
+struct row2 {
+    float C, I, I_R, I_L, I_C;
+};
+
+struct table2 {
+    row2 *data; size_t len, cap;
+};
+
+void read_table2(FILE *csv, struct table2 *table)
+{
+    struct row2 row = { 0 };
+
+    while (fscanf(csv, "%f, %f, %f, %f, %f",
+          &row.C, &row.I, &row.I_R, &row.I_L, &row.I_C) == 5) {
+        da_push(table, row); 
+    }
+}
 
 
 int main(int argc, char** argv)
@@ -89,28 +109,6 @@ int main(int argc, char** argv)
         da_push(&result_table, curr);
     }
 
-    printf("                                     ---< RESULT TABLE >---\n");
-    printf(" %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s %6s\n",
-        "C", "I", "U_R", "U_L", "U_C", "R", "X_L", "X_C", "Z", "X", "P", "Q", "S", "phi");
-
-    for (size_t i = 0; i < result_table.len; ++i) {
-        printf(" %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f\n",
-               result_table.rows[i].C,
-               result_table.rows[i].I,
-               result_table.rows[i].U_R,
-               result_table.rows[i].U_L,
-               result_table.rows[i].U_C,
-               result_table.rows[i].R,
-               result_table.rows[i].X_L,
-               result_table.rows[i].X_C,
-               result_table.rows[i].Z,
-               result_table.rows[i].X,
-               result_table.rows[i].P,
-               result_table.rows[i].Q,
-               result_table.rows[i].S,
-               result_table.rows[i].phi);
-	}
-
     FILE *output = fopen("output.csv", "w");
     for (size_t i = 0; i  < result_table.len; i++) {
         fprintf(output, "%6f, %6f, %6f, %6f, %6f, %6f, %6f, %6f, %6f, %6f, %6f, %6f, %6f, %6f\n",
@@ -130,6 +128,13 @@ int main(int argc, char** argv)
                 result_table.rows[i].phi);
     }
     fclose(output);
+
+
+    FILE *input2 = fopen("./measured_data2.csv");
+    struct table2 table = { 0 };
+    read_table2(&table);
+
+    fclose(input2);
 
     return 0;
 }
