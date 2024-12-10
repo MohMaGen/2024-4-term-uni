@@ -124,4 +124,57 @@
         image("./circuit2.png")
     )
 
++ Экперементальные значения.
+    #figure(
+        caption: "Таблица эксперементальных значений.",
+        tablex(
+            columns: range(5).map(it => 2cm), 
+            header-rows: 1,
+            auto-vlines: false,
+            align: center + horizon,
+            repeat-header: true,
+            rows: (1cm, 0.5cm),
+
+            vlinex(), (), (), (), (), vlinex(),
+            $C, ["мкФ"]$, $I, ["мА"]$, $I_R, ["A"]$,
+            $I_L, ["A"]$, $I_C, ["A"]$,
+            ..clear_csv(csv("./measured_data2.csv")).flatten(),
+        )
+    )
+
++ Расчётные данные.
+    #figure(
+        caption: "Таблица расчётных значений.",
+        tablex(
+            columns: range(11).map(it => 1.3cm), 
+            header-rows: 1,
+            align: center + horizon,
+            repeat-header: true,
+            rows: (1cm, 0.5cm),
+            auto-vlines: false,
+            map-cells: cell => {
+                if cell.y == 0 { 
+                    cell.content = {
+                        set text(size: 9pt)
+                        strong(cell.content)
+                    }
+                } else {
+                    cell.content = {
+                        set text(size: 9pt)
+                        cell.content
+                    }
+                }
+                cell
+            },
+            vlinex(),
+            $C, ["мкФ"]$, $I, ["А"]$, $I_R dot.c 10^3, ["A"]$, $I_L, ["А"]$,
+            $I_C, ["А"]$,
+            $Y dot.c 10^3, ["См"]$, $G dot.c 10^, ["См"]$,
+            $B dot.c 10^3, ["См"]$, $S, ["Вт"]$, $P, ["Вт"]$,
+             $cos phi dot.c 10^3$,
+            vlinex(),
+            ..clear_csv(csv("./output2.csv")).flatten(),
+        )
+    )
+
 == Вывод
