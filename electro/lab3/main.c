@@ -56,7 +56,6 @@ void read_table2(FILE *csv, struct table2 *table)
 
     while (fscanf(csv, "%f, %f, %f, %f, %f",
           &row.C, &row.I, &row.I_R, &row.I_L, &row.I_C) == 5) {
-        row.I_R *= 0.001;
         da_push(table, row); 
     }
 }
@@ -153,31 +152,10 @@ int main(int argc, char** argv)
         float cos_phi = P / S;
 
         fprintf(output2, "%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
-                        C, I, I_R * 1000, I_L, I_C, Y * 1000, G * 1000,
-                        B * 1000, S, P, cos_phi * 1000);
-    }
-    fclose(output2);
-    FILE *output2_true = fopen("./output2-true.csv", "w");
-    for (size_t i = 0; i < table2.len; i++) {
-        struct row2 row = table2.data[i];
-        float C = row.C,
-              I = row.I,
-              I_R = row.I_R,
-              I_L = row.I_L,
-              I_C = row.I_C;
-
-        float Y = I / U;
-        float G = I_R / U;
-        float B = I_C / U - I_L / U;
-        float S = U * I;
-        float P = U * I_R;
-        float cos_phi = P / S;
-
-        fprintf(output2_true, "%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
-                        C, I, I_R, I_L, I_C, Y, G,
+                        C, I, I_R, I_L, I_C, Y, G ,
                         B, S, P, cos_phi);
     }
-    fclose(output2_true);
+    fclose(output2);
 
     return 0;
 }
