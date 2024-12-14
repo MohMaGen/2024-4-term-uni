@@ -1,0 +1,20 @@
+]0;mongosh mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000Current Mongosh Log ID:	675838a6a88400bd17e94969
+Connecting to:		[1m[32mmongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.3.4[0m
+Using MongoDB:		8.0.4
+[1m[33mUsing Mongosh[0m:		2.3.4
+
+For mongosh info see: https://www.mongodb.com/docs/mongodb-shell/
+
+[1G[0J [1G[1m[33m------[0m
+   [1m[33mThe server generated these startup warnings when booting[0m
+   2024-12-10T10:50:59.148+00:00: Using the XFS filesystem is strongly recommended with the WiredTiger storage engine. See http://dochub.mongodb.org/core/prodnotes-filesystem
+   2024-12-10T10:51:00.078+00:00: Access control is not enabled for the database. Read and write access to data and configuration is unrestricted
+   2024-12-10T10:51:00.078+00:00: Soft rlimits for open file descriptors too low
+   2024-12-10T10:51:00.078+00:00: For customers running the current memory allocator, we suggest changing the contents of the following sysfsFile
+   2024-12-10T10:51:00.078+00:00: For customers running the current memory allocator, we suggest changing the contents of the following sysfsFile
+   2024-12-10T10:51:00.078+00:00: We suggest setting the contents of sysfsFile to 0.
+   2024-12-10T10:51:00.078+00:00: Your system has glibc support for rseq built in, which is not yet supported by tcmalloc-google and has critical performance implications. Please set the environment variable GLIBC_TUNABLES=glibc.pthread.rseq=0
+   2024-12-10T10:51:00.078+00:00: We suggest setting swappiness to 0 or 1, as swapping can cause performance problems.
+[1m[33m------[0m
+
+MongoshRuntimeError: Cannot use --json without --eval or with --shell or with extra files

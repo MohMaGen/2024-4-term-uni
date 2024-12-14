@@ -1,0 +1,62 @@
+[
+  {
+    _id: ObjectId('6758258a4000176ef9e9496a'),
+    start_date: '3.02.04',
+    project_name: 'Проект1',
+    family_name: 'Иванов',
+    age: 30,
+    proj_type: 'Технология',
+    duration: 5,
+    cost: 1200
+  },
+  {
+    _id: ObjectId('675825e44000176ef9e9496b'),
+    start_date: '15.01.05',
+    project_name: 'Проект2',
+    family_name: 'Петрова',
+    age: 30,
+    proj_type: 'НИР',
+    duration: 4,
+    cost: 800
+  },
+  {
+    _id: ObjectId('675826254000176ef9e9496c'),
+    start_date: '2.02.05',
+    project_name: 'Проект3',
+    family_name: 'Сидорова',
+    age: 41,
+    proj_type: 'Технология',
+    duration: 3,
+    cost: 950
+  },
+  {
+    _id: ObjectId('6758265d4000176ef9e9496d'),
+    start_date: '2.03.05',
+    project_name: 'Проект4',
+    family_name: 'Иванов',
+    age: 30,
+    proj_type: 'НИР',
+    duration: 5,
+    cost: 1000
+  },
+  {
+    _id: ObjectId('6758272b4000176ef9e9496e'),
+    start_date: '14.02.05',
+    project_name: 'Проект5',
+    family_name: 'Сидорова',
+    age: 41,
+    proj_type: 'ОКР',
+    duration: 3,
+    cost: 900
+  },
+  {
+    _id: ObjectId('6758275c4000176ef9e9496f'),
+    start_date: '4.04.05',
+    project_name: 'Проект6',
+    family_name: 'Петрова',
+    age: 29,
+    proj_type: 'Технология',
+    duration: 4,
+    cost: 1100
+  }
+]

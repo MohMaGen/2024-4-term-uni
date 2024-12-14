@@ -1,0 +1,25 @@
+{
+  "type": "ShowDatabasesResult",
+  "value": [
+    {
+      "name": "Mokhov_KS34",
+      "sizeOnDisk": 73728,
+      "empty": false
+    },
+    {
+      "name": "admin",
+      "sizeOnDisk": 40960,
+      "empty": false
+    },
+    {
+      "name": "config",
+      "sizeOnDisk": 110592,
+      "empty": false
+    },
+    {
+      "name": "local",
+      "sizeOnDisk": 40960,
+      "empty": false
+    }
+  ]
+}

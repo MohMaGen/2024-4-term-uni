@@ -1,0 +1,9 @@
+{
+  "type": "ShowCollectionsResult",
+  "value": [
+    {
+      "name": "projects",
+      "badge": ""
+    }
+  ]
+}

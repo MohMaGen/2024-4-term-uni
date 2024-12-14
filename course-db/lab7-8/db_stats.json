@@ -1,0 +1,16 @@
+{
+  "db": "test",
+  "collections": 0,
+  "views": 0,
+  "objects": 0,
+  "avgObjSize": 0,
+  "dataSize": 0,
+  "storageSize": 0,
+  "indexes": 0,
+  "indexSize": 0,
+  "totalSize": 0,
+  "scaleFactor": 1,
+  "fsUsedSize": 67391426560,
+  "fsTotalSize": 116441427968,
+  "ok": 1
+}
