@@ -21,6 +21,7 @@
 
 + Экспериментальные значения.
     #figure(
+        kind: table,
         caption: "Таблица экспериментальных значений.",
         tablex(
             columns: range(5).map(it => 2cm), 
@@ -134,6 +135,7 @@
 
 + Экспериментальные значения.
     #figure(
+        kind: table,
         caption: "Таблица экспериментальных значений.",
         tablex(
             columns: range(5).map(it => 2cm), 
@@ -152,6 +154,7 @@
 
 + Расчётные данные.
     #figure(
+        kind: table,
         caption: "Таблица расчётных значений.",
         tablex(
             columns: range(11).map(it => 1.3cm), 

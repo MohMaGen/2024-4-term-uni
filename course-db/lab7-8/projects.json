@@ -1,9 +1,6 @@
-{
-  "type": "ShowCollectionsResult",
-  "value": [
-    {
-      "name": "projects",
-      "badge": ""
-    }
-  ]
-}
+{"_id":{"$oid":"6758258a4000176ef9e9496a"},"start_date":{"$date":"2004-03-02T00:00:00Z"},"project_name":"Проект1","proj_type":"Технология","duration":5,"cost":1200,"author":{"$ref":"authors","$id":"I"}}
+{"_id":{"$oid":"6758265d4000176ef9e9496d"},"start_date":{"$date":"2005-02-03T00:00:00Z"},"project_name":"Проект4","proj_type":"НИР","duration":5,"cost":1000,"author":{"$ref":"authors","$id":"I"}}
+{"_id":{"$oid":"675825e44000176ef9e9496b"},"start_date":{"$date":"1970-01-01T00:00:00Z"},"project_name":"Проект2","proj_type":"НИР","duration":4,"cost":800,"author":{"$ref":"authors","$id":"P"}}
+{"_id":{"$oid":"6758272b4000176ef9e9496e"},"start_date":{"$date":"1970-01-01T00:00:00Z"},"project_name":"Проект5","proj_type":"ОКР","duration":3,"cost":900,"author":{"$ref":"authors","$id":"S"}}
+{"_id":{"$oid":"6758275c4000176ef9e9496f"},"start_date":{"$date":"2005-04-04T00:00:00Z"},"project_name":"Проект6","proj_type":"Технология","duration":4,"cost":1100,"author":{"$ref":"authors","$id":"P"}}
+{"_id":{"$oid":"675826254000176ef9e9496c"},"start_date":{"$date":"2005-02-02T00:00:00Z"},"project_name":"Проект3","proj_type":"Технология","duration":3,"cost":950,"author":{"$ref":"authors","$id":"S"}}

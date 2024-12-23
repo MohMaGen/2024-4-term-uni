@@ -41,9 +41,7 @@
         )
 
     // Установка свойств страницы 
-    set page(
-            margin: (top:2cm, bottom:2cm, left:2.5cm, right:1cm),
-            )
+    set page( margin: (top:2cm, bottom:2cm, left:2.5cm, right:1cm), )
 
     // форматирование заголовков
     set heading(numbering: "1.", outlined: true, supplement: [Раздел])
@@ -113,7 +111,7 @@
 
 
     {
-        set text(size:18pt)
+        set text(size:16pt)
         set par(leading: 1em, justify: false)
         set align(center)
         organization
@@ -135,7 +133,6 @@
         align(bottom, {
             set align(right)
             "Научный руководитель:"
-            v(0em)
             supervisor-regalia
             v(0em)
             supervisor-name
