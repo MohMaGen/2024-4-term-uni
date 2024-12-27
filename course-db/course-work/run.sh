@@ -26,3 +26,9 @@ doas -u postgres psql -d course_work -c "select * from orders" \
     -P format=csv -q > orders.csv
 
 
+for req in req*.sql;
+do
+    res="res${req:3:-4}.csv";
+    doas -u postgres psql -d course_work -f $req -P format=csv -q > $res;
+done
+

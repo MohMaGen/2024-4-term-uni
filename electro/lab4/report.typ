@@ -329,7 +329,7 @@
 
 
 + Векторная диаграмма:
-	#let s = 5
+	#let s = 7
 
     #align(center, figure(
         kind: image,
@@ -365,12 +365,12 @@
             (cetz.vector.add, u_a, (angle:  245deg, radius: r_i)),
             stroke: green, name: "I_C")
 
-        line(u_b,
-            (cetz.vector.add, u_b, (angle: 125deg, radius: r_i)),
-            stroke: blue,  name: "I_B")
-
         line(u_c,
             (cetz.vector.add, u_c, (angle: 5deg, radius: r_i)),
+            stroke: blue,  name: "I_B")
+
+        line(u_b,
+            (cetz.vector.add, u_b, (angle: 125deg, radius: r_i)),
             stroke: red,   name: "I_A")
 
         line(u_a,
@@ -379,23 +379,34 @@
 
         line(u_b,
             (cetz.vector.add, u_b, (angle: 140deg, radius: r_i)),
-            stroke: black, name: "I_BC")
+            stroke: black, name: "I_AB")
 
         line(u_c,
             (cetz.vector.add, u_c, (angle: 20deg, radius: r_i)),
-            stroke: black, name: "I_AB")
+            stroke: black, name: "I_BC")
 
 
-        content("I_A.end", text(size: 12pt, $arrow(I_A)$), anchor:"east")
-        content("I_B.end", text(size: 12pt, $arrow(I_B)$), anchor:"west")
+        content("I_A.end", text(size: 12pt, $arrow(I_A)$), anchor:"south")
+        content("I_B.end", text(size: 12pt, $arrow(I_B)$), anchor:"north-west")
         content("I_C.end", text(size: 12pt, $arrow(I_C)$), anchor:"east")
 
-        content("I_AB.end", text(size: 12pt, $arrow(I_{A B})$),
-                anchor:"west")
-        content("I_AC.end", text(size: 12pt, $arrow(I_{A C})$),
+        content("I_AB.end", text(size: 12pt, $arrow(I_(A B))$),
                 anchor:"north")
-        content("I_BC.end", text(size: 12pt, $arrow(I_{B C})$),
+        content("I_AC.end", text(size: 12pt, $arrow(I_(A C))$),
                 anchor:"south")
+        content("I_BC.end", text(size: 12pt, $arrow(I_(B C))$),
+                anchor:"east")
+
+        line("I_AC.end", "I_C.end", name: "I_mBC", stroke: black)
+        line("I_BC.end", "I_B.end", name: "I_mAC", stroke: black)
+        line("I_AB.end", "I_A.end", name: "I_mAB", stroke: black)
+
+        content("I_mAB.end", text(size: 12pt, $arrow(I_(- A C))$),
+                anchor:"east")
+        content("I_mAC.end", text(size: 12pt, $arrow(I_(- A B))$),
+                anchor:"south-west")
+        content("I_mBC.end", text(size: 12pt, $arrow(I_(- B C))$),
+                anchor:"north")
 
     })))
 

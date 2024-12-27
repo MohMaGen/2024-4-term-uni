@@ -24,6 +24,3 @@ WHERE NOT (EXTRACT(YEAR FROM v::date), EXTRACT(MONTH FROM v::date)) IN
         GROUP BY _year, _month)
 
 ORDER BY year, month;
-
-SELECT * FROM ordered_cars_by_monthes;
-

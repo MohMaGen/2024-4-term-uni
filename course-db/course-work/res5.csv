@@ -1,3 +1,0 @@
-order_id,car_vin,cost,issue_date,return_date,supplier_id,client_id
-1,15AD1135931ADB325,10000,2022-11-02,2022-12-05,1,1
-6,15AD1135931ADAB49,105000,2022-02-25,2022-03-02,3,1

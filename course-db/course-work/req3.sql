@@ -42,5 +42,3 @@ BEGIN
         FROM ordered_cars(moment) AS oc;
 END
 $$;
-
-SELECT * FROM cars_state('2023-1-5');

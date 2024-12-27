@@ -44,3 +44,5 @@
 #include "./lab2/report.typ"
 #include "./lab3/report.typ"
 #include "./lab4/report.typ"
+#include "./lab5/report.typ"
+#include "./lab6/report.typ"

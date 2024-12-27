@@ -1,6 +1,6 @@
 DROP FUNCTION IF EXISTS cars_of_client(INT);
 DROP FUNCTION IF EXISTS cars_of_client_by_range(INT, DATE, DATE);
-DROP FUNCTION IF EXISTS cars_of_client_at_moment(INT, DATE, DATE);
+DROP FUNCTION IF EXISTS cars_of_client_at_moment(INT, DATE);
 
 
 CREATE OR REPLACE FUNCTION cars_of_client(id INT)
@@ -9,7 +9,7 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     return query
-        SELECT c.VIN, c.model
+        SELECT DISTINCT c.VIN, c.model
         FROM cars AS c
         WHERE c.VIN IN (SELECT o.car_VIN
                         FROM  orders_of_client(id) AS O);
@@ -23,7 +23,7 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     return query
-        SELECT c.VIN, c.model
+        SELECT DISTINCT c.VIN, c.model
         FROM cars AS c
         WHERE c.VIN IN (SELECT o.car_VIN
                         FROM orders_of_client(id) AS o
@@ -38,7 +38,7 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     return query
-        SELECT c.VIN, c.model
+        SELECT DISTINCT c.VIN, c.model
         FROM cars AS c
         WHERE c.VIN IN (SELECT o.car_VIN
                         FROM orders_of_client(id) AS o
